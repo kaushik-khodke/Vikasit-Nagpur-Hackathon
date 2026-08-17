@@ -9,14 +9,13 @@ import {
   AlertTriangle,
   MapPin,
   Eye,
-  Zap,
   Volume2,
   VolumeX
 } from 'lucide-react';
 import { EDGE_CAMERA_CONFIGS } from '../data/gisData';
 import { tigerService } from '../service/api';
 
-interface CameraChannelState {
+export interface CameraChannelState {
   id: string;
   name: string;
   code: string;
@@ -36,16 +35,32 @@ interface CameraChannelState {
   alertDispatched: boolean;
   alertTimestamp: string | null;
   audioMuted: boolean;
+  startTime: number;
 }
 
-// Sample video assets for high-speed online demo streams
-const DEMO_VIDEO_SAMPLES = [
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4'
-];
+// Persistent Dynamic Channel State outside React lifecycle so uploaded video feeds persist across navigation
+let globalChannelStates: CameraChannelState[] = EDGE_CAMERA_CONFIGS.map((cfg) => ({
+  id: cfg.id,
+  name: cfg.name,
+  code: cfg.code,
+  zone: cfg.zone,
+  nearbyVillage: cfg.nearbyVillage,
+  distanceToVillageMeters: cfg.distanceToVillageMeters,
+  facingDirection: cfg.facingDirection,
+  videoUrl: null,
+  videoFileName: null,
+  isPlaying: false,
+  isProcessing: false,
+  fps: 30,
+  frameCount: 0,
+  tigerDetected: false,
+  detectedTigerId: null,
+  detectedConfidence: null,
+  alertDispatched: false,
+  alertTimestamp: null,
+  audioMuted: true,
+  startTime: 0,
+}));
 
 export const LiveCameraFeeds: React.FC = () => {
   const navigate = useNavigate();
@@ -54,43 +69,58 @@ export const LiveCameraFeeds: React.FC = () => {
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const animationFrameRefs = useRef<{ [key: string]: number }>({});
 
-  // Initialize all 5 channels in blank / ready state
-  const [channels, setChannels] = useState<CameraChannelState[]>(() =>
-    EDGE_CAMERA_CONFIGS.map((cfg) => ({
-      id: cfg.id,
-      name: cfg.name,
-      code: cfg.code,
-      zone: cfg.zone,
-      nearbyVillage: cfg.nearbyVillage,
-      distanceToVillageMeters: cfg.distanceToVillageMeters,
-      facingDirection: cfg.facingDirection,
-      videoUrl: null,
-      videoFileName: null,
-      isPlaying: false,
-      isProcessing: false,
-      fps: 30,
-      frameCount: 0,
-      tigerDetected: false,
-      detectedTigerId: null,
-      detectedConfidence: null,
-      alertDispatched: false,
-      alertTimestamp: null,
-      audioMuted: true,
-    }))
-  );
-
+  // Sync with persistent dynamic channel state
+  const [channels, setChannels] = useState<CameraChannelState[]>(() => globalChannelStates);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [globalSoundEnabled, setGlobalSoundEnabled] = useState(true);
+
+  // Keep global state updated on every local state change
+  const updateChannels = (updater: (prev: CameraChannelState[]) => CameraChannelState[]) => {
+    setChannels((prev) => {
+      const next = updater(prev);
+      globalChannelStates = next;
+      return next;
+    });
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 5000);
   };
 
+  // Synchronize HTML5 video playback to continuous wall-clock time so feeds never restart from 0
+  const syncVideoToWallClock = (v: HTMLVideoElement, channel: CameraChannelState) => {
+    if (!v || !channel.videoUrl) return;
+    v.muted = true;
+    v.loop = true;
+
+    const onLoadedMetadata = () => {
+      if (v.duration && v.duration > 0 && channel.startTime > 0) {
+        const elapsedSec = ((Date.now() - channel.startTime) / 1000) % v.duration;
+        v.currentTime = elapsedSec;
+      }
+      if (channel.isPlaying) {
+        v.play().catch(() => {});
+      }
+    };
+
+    if (v.readyState >= 1 && v.duration > 0 && channel.startTime > 0) {
+      const elapsedSec = ((Date.now() - channel.startTime) / 1000) % v.duration;
+      if (Math.abs(v.currentTime - elapsedSec) > 3) {
+        v.currentTime = elapsedSec;
+      }
+      if (channel.isPlaying && v.paused) {
+        v.play().catch(() => {});
+      }
+    } else {
+      v.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
+    }
+  };
+
   // Handle Video Upload for a specific camera channel
   const handleFileUpload = (cameraId: string, file: File) => {
     const url = URL.createObjectURL(file);
-    setChannels((prev) =>
+    updateChannels((prev) =>
       prev.map((ch) =>
         ch.id === cameraId
           ? {
@@ -99,60 +129,22 @@ export const LiveCameraFeeds: React.FC = () => {
               videoFileName: file.name,
               isPlaying: true,
               isProcessing: true,
+              startTime: Date.now(),
               frameCount: 0,
               tigerDetected: false,
               detectedTigerId: null,
+              detectedConfidence: null,
               alertDispatched: false,
+              alertTimestamp: null,
             }
           : ch
       )
     );
-    showToast(`Loaded video ${file.name} for ${cameraId}. AI detection active.`);
-  };
-
-  // Quick Demo Video Loader for a channel
-  const handleLoadDemo = (cameraId: string, index: number) => {
-    const demoUrl = DEMO_VIDEO_SAMPLES[index % DEMO_VIDEO_SAMPLES.length];
-    setChannels((prev) =>
-      prev.map((ch) =>
-        ch.id === cameraId
-          ? {
-              ...ch,
-              videoUrl: demoUrl,
-              videoFileName: `Field_Stream_${ch.code}_HD.mp4`,
-              isPlaying: true,
-              isProcessing: true,
-              frameCount: 0,
-              tigerDetected: false,
-              detectedTigerId: null,
-              alertDispatched: false,
-            }
-          : ch
-      )
-    );
-    showToast(`Loaded field demonstration feed on ${cameraId}.`);
-  };
-
-  // Global Controls
-  const handleLoadAllDemoFeeds = () => {
-    setChannels((prev) =>
-      prev.map((ch, idx) => ({
-        ...ch,
-        videoUrl: DEMO_VIDEO_SAMPLES[idx % DEMO_VIDEO_SAMPLES.length],
-        videoFileName: `Field_Stream_${ch.code}_HD.mp4`,
-        isPlaying: true,
-        isProcessing: true,
-        frameCount: 0,
-        tigerDetected: false,
-        detectedTigerId: null,
-        alertDispatched: false,
-      }))
-    );
-    showToast('Loaded demo video streams across all 5 perimeter cameras.');
+    showToast(`Connected live feed: ${file.name} to ${cameraId}. AI detection active.`);
   };
 
   const handlePlayAll = () => {
-    setChannels((prev) =>
+    updateChannels((prev) =>
       prev.map((ch) => {
         if (ch.videoUrl) {
           const v = videoRefs.current[ch.id];
@@ -165,7 +157,7 @@ export const LiveCameraFeeds: React.FC = () => {
   };
 
   const handlePauseAll = () => {
-    setChannels((prev) =>
+    updateChannels((prev) =>
       prev.map((ch) => {
         const v = videoRefs.current[ch.id];
         if (v) v.pause();
@@ -176,7 +168,7 @@ export const LiveCameraFeeds: React.FC = () => {
 
   const handleClearAll = () => {
     Object.values(animationFrameRefs.current).forEach(cancelAnimationFrame);
-    setChannels((prev) =>
+    updateChannels((prev) =>
       prev.map((ch) => {
         const v = videoRefs.current[ch.id];
         if (v) {
@@ -193,11 +185,14 @@ export const LiveCameraFeeds: React.FC = () => {
           frameCount: 0,
           tigerDetected: false,
           detectedTigerId: null,
+          detectedConfidence: null,
           alertDispatched: false,
+          alertTimestamp: null,
+          startTime: 0,
         };
       })
     );
-    showToast('All live video feeds reset to blank/standby state.');
+    showToast('All camera feeds disconnected and reset to standby.');
   };
 
   // Play / Pause Individual Channel
@@ -205,7 +200,7 @@ export const LiveCameraFeeds: React.FC = () => {
     const v = videoRefs.current[cameraId];
     if (!v) return;
 
-    setChannels((prev) =>
+    updateChannels((prev) =>
       prev.map((ch) => {
         if (ch.id === cameraId) {
           if (ch.isPlaying) {
@@ -228,7 +223,7 @@ export const LiveCameraFeeds: React.FC = () => {
     const timeStr = new Date().toLocaleTimeString();
 
     // Mark in state
-    setChannels((prev) =>
+    updateChannels((prev) =>
       prev.map((ch) =>
         ch.id === channel.id
           ? {
@@ -290,6 +285,8 @@ export const LiveCameraFeeds: React.FC = () => {
       const canvas = canvasRefs.current[ch.id];
       if (!v || !canvas || !ch.videoUrl || !ch.isPlaying) return;
 
+      syncVideoToWallClock(v, ch);
+
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
@@ -303,10 +300,9 @@ export const LiveCameraFeeds: React.FC = () => {
 
           ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
 
-          // Simulate AI Bounding Box & Tiger discovery based on frame index
-          // Trigger tiger discovery around frame 30 to 180
-          const hasTigerInWindow = (frameCounter % 200) > 30 && (frameCounter % 200) < 170;
-          const assignedTiger = ['TGR-001', 'TGR-004', 'TGR-002', 'TGR-003', 'TGR-005'][idx % 5];
+          // Real-Time Simulated Tiger Discovery on Perimeter cameras
+          const hasTigerInWindow = (frameCounter % 240) > 40 && (frameCounter % 240) < 190;
+          const assignedTiger = ['TGR-001', 'TGR-004', 'TGR-002', 'TGR-003', 'TGR-001'][idx % 5];
           const conf = 0.94 + ((frameCounter % 5) * 0.01);
 
           if (hasTigerInWindow) {
@@ -449,15 +445,6 @@ export const LiveCameraFeeds: React.FC = () => {
 
           <button
             className="tt-btn tt-btn-secondary btn-sm"
-            onClick={handleLoadAllDemoFeeds}
-            title="Load sample demo video to all 5 cameras at once"
-          >
-            <Zap size={13} className="text-amber" />
-            <span>Load All 5 Demo Feeds</span>
-          </button>
-
-          <button
-            className="tt-btn tt-btn-secondary btn-sm"
             onClick={handlePlayAll}
             disabled={activeFeedsCount === 0}
           >
@@ -487,7 +474,7 @@ export const LiveCameraFeeds: React.FC = () => {
 
       {/* 5-Channel Video Grid Layout */}
       <div className="multi-feed-grid">
-        {channels.map((channel, idx) => {
+        {channels.map((channel) => {
           const hasVideo = channel.videoUrl !== null;
           const isThreat = channel.tigerDetected;
 
@@ -532,20 +519,22 @@ export const LiveCameraFeeds: React.FC = () => {
                     <video
                       ref={(el) => {
                         videoRefs.current[channel.id] = el;
+                        if (el) syncVideoToWallClock(el, channel);
                       }}
                       src={channel.videoUrl!}
                       playsInline
                       muted={channel.audioMuted}
                       loop
                       autoPlay
+                      crossOrigin="anonymous"
                       className="hidden-source-video"
                       onPlay={() => {
-                        setChannels((prev) =>
+                        updateChannels((prev) =>
                           prev.map((c) => (c.id === channel.id ? { ...c, isPlaying: true } : c))
                         );
                       }}
                       onPause={() => {
-                        setChannels((prev) =>
+                        updateChannels((prev) =>
                           prev.map((c) => (c.id === channel.id ? { ...c, isPlaying: false } : c))
                         );
                       }}
@@ -575,43 +564,29 @@ export const LiveCameraFeeds: React.FC = () => {
                     )}
                   </div>
                 ) : (
-                  /* Standby / Empty Video Upload Prompt */
                   <div
                     className="channel-upload-dropzone"
                     onClick={() => fileInputRefs.current[channel.id]?.click()}
                   >
-                    <UploadCloud size={32} className="dropzone-icon" />
+                    <UploadCloud size={36} className="dropzone-icon" />
                     <div className="upload-prompt-text">
-                      Click to Select or Drop Camera Video
+                      Upload Live Camera Video Feed
                     </div>
                     <div className="upload-prompt-sub">
-                      Supports MP4, WEBM, MOV (Concurrently Analyzed)
+                      Attach real-time MP4, WEBM, or MOV video stream from {channel.code}
                     </div>
-                    <div className="dropzone-btn-row">
-                      <button
-                        className="tt-btn tt-btn-primary btn-sm"
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fileInputRefs.current[channel.id]?.click();
-                        }}
-                      >
-                        <UploadCloud size={13} />
-                        <span>Select File</span>
-                      </button>
-
-                      <button
-                        className="tt-btn tt-btn-secondary btn-sm"
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLoadDemo(channel.id, idx);
-                        }}
-                      >
-                        <Zap size={13} />
-                        <span>Load Sample</span>
-                      </button>
-                    </div>
+                    <button
+                      className="tt-btn tt-btn-primary btn-sm"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRefs.current[channel.id]?.click();
+                      }}
+                      style={{ marginTop: '10px' }}
+                    >
+                      <UploadCloud size={14} />
+                      <span>Select Video File</span>
+                    </button>
                   </div>
                 )}
               </div>

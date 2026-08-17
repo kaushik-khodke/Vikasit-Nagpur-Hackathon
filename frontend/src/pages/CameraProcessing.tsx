@@ -75,21 +75,6 @@ export const CameraProcessing: React.FC = () => {
     }
   };
 
-  const handleSeedBatches = async () => {
-    try {
-      const res = await tigerService.seedProcessingBatches();
-      if (res.batches) {
-        setBatches(res.batches);
-      } else {
-        loadBatches();
-      }
-      setFeedbackMsg('Demo field batches loaded.');
-      setTimeout(() => setFeedbackMsg(null), 4000);
-    } catch (err) {
-      console.error('Failed to seed batches:', err);
-    }
-  };
-
   // Poll live stream telemetry when session is active
   useEffect(() => {
     if (!activeStreamSession) return;
@@ -537,15 +522,6 @@ export const CameraProcessing: React.FC = () => {
             >
               <RotateCcw size={12} />
               <span>Reset Logs (0)</span>
-            </button>
-            <button
-              className="tt-btn tt-btn-secondary btn-sm"
-              onClick={handleSeedBatches}
-              title="Load demo sample batches"
-              style={{ fontSize: '11px', padding: '4px 10px' }}
-            >
-              <RefreshCw size={12} />
-              <span>Seed Demo Data</span>
             </button>
           </div>
         </div>
