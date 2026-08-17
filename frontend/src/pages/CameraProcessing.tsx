@@ -11,7 +11,8 @@ import {
   X,
   Eye,
   Activity,
-  Check
+  Check,
+  Info
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { mockCameraTraps } from '../data/mockData';
