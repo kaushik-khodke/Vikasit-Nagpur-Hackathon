@@ -1,0 +1,17 @@
+<annotation>
+    <filename>TGR-003_04.jpg</filename>
+    <size>
+        <width>800</width>
+        <height>600</height>
+        <depth>3</depth>
+    </size>
+    <object>
+        <name>tiger</name>
+        <bndbox>
+            <xmin>150</xmin>
+            <ymin>120</ymin>
+            <xmax>650</xmax>
+            <ymax>480</ymax>
+        </bndbox>
+    </object>
+</annotation>

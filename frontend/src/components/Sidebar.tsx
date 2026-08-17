@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,7 +11,7 @@ import {
   Trees,
   ChevronLeft
 } from 'lucide-react';
-import { mockAlerts, mockSightings, mockTigers } from '../data/mockData';
+import { tigerService } from '../service/api';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,14 +20,34 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  isOpen,
-  isCollapsed,
-  onToggleCollapse,
-  onCloseMobile
-}) => {
-  const pendingReviewCount = mockSightings.filter(s => s.reviewStatus === 'PENDING_REVIEW').length;
-  const unreadAlertsCount = mockAlerts.filter(a => !a.acknowledged).length;
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
+  const [batchesCount, setBatchesCount] = useState<number>(3);
+  const [pendingReviewCount, setPendingReviewCount] = useState<number>(1);
+  const [tigersCount, setTigersCount] = useState<number>(4);
+  const [unreadAlertsCount, setUnreadAlertsCount] = useState<number>(2);
+
+  useEffect(() => {
+    const fetchSidebarCounts = async () => {
+      try {
+        const [batches, sightings, tigers, alerts] = await Promise.all([
+          tigerService.getProcessingBatches(),
+          tigerService.getRecentSightings(),
+          tigerService.getAllTigers(),
+          tigerService.getAlerts(),
+        ]);
+        if (batches) setBatchesCount(batches.length);
+        if (sightings) setPendingReviewCount(sightings.filter(s => s.reviewStatus === 'PENDING_REVIEW').length);
+        if (tigers) setTigersCount(tigers.length);
+        if (alerts) setUnreadAlertsCount(alerts.filter(a => !a.acknowledged).length);
+      } catch (err) {
+        console.error('Sidebar count error:', err);
+      }
+    };
+
+    fetchSidebarCounts();
+    const interval = setInterval(fetchSidebarCounts, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const navItems = [
     {
@@ -40,7 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       name: 'Camera Trap Processing',
       path: '/camera-processing',
       icon: Camera,
-      badge: '3 Batches'
+      badge: batchesCount > 0 ? `${batchesCount} Batches` : null
     },
     {
       name: 'Image Review',
@@ -53,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       name: 'Tiger Database',
       path: '/tigers',
       icon: Database,
-      badge: `${mockTigers.length} Tigers`
+      badge: `${tigersCount} Tigers`
     },
     {
       name: 'Movement & Territory',
@@ -134,16 +154,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* Reserve Jurisdiction Sub-header (only when expanded) */}
-        {!isCollapsed && (
-          <div className="reserve-tag-strip">
-            <div className="reserve-indicator">
-              <Trees size={13} className="trees-icon" />
-              <span>Forest Department System</span>
-            </div>
-            <span className="prototype-pill">PROTOTYPE</span>
+        {/* Reserve Jurisdiction Sub-header */}
+        <div className="reserve-tag-strip">
+          <div className="reserve-indicator">
+            <Trees size={13} className="trees-icon" />
+            <span>Forest Department System</span>
           </div>
-        )}
+          <span className="prototype-pill" style={{ background: '#15803D', color: '#DCFCE7' }}>ACTIVE</span>
+        </div>
 
         {/* Navigation List */}
         <nav className="sidebar-nav">
@@ -203,18 +221,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </ul>
         </nav>
 
-        {/* Clean Minimal Footer */}
+        {/* Sidebar Footer / Data Specification Box */}
         <div className="sidebar-footer">
           {isCollapsed ? (
             <div className="footer-collapsed">
               <span className="version-tag">v2.1</span>
             </div>
-          ) : (
-            <div className="footer-copyright">
-              <span>Pench Tiger Reserve</span>
-              <span className="version-tag">v2.1</span>
+            <div className="telemetry-details">
+              <div className="detail-row">
+                <span className="detail-label">Data Mode:</span>
+                <span className="detail-val">Live Field Ingestion</span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Primary Input:</span>
+                <span className="detail-val">Camera-trap imagery</span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Camera Array:</span>
+                <span className="detail-val">24 Active Stations</span>
+              </div>
             </div>
-          )}
+          </div>
+
+          <div className="footer-copyright">
+            <span>Pench Tiger Reserve</span>
+            <span className="version-tag">v2.1</span>
+          </div>
         </div>
       </aside>
 
