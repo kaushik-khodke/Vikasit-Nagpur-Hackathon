@@ -22,8 +22,31 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from geoalchemy2 import Geography, Geometry
-from pgvector.sqlalchemy import Vector
+from sqlalchemy.types import UserDefinedType
+
+try:
+    from geoalchemy2 import Geography, Geometry
+except ImportError:
+    class Geography(UserDefinedType):
+        def __init__(self, *args, **kwargs):
+            pass
+        def get_col_spec(self, **kw):
+            return "GEOGRAPHY"
+
+    class Geometry(UserDefinedType):
+        def __init__(self, *args, **kwargs):
+            pass
+        def get_col_spec(self, **kw):
+            return "GEOMETRY"
+
+try:
+    from pgvector.sqlalchemy import Vector
+except ImportError:
+    class Vector(UserDefinedType):
+        def __init__(self, *args, **kwargs):
+            pass
+        def get_col_spec(self, **kw):
+            return "VECTOR(512)"
 
 SCHEMA_NAME = "tigertrace"
 

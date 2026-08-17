@@ -70,17 +70,17 @@ class PipelineConfig(BaseSettings):
     VIDEO_SUBSAMPLE_FPS: float = Field(default=1.0)  # Subsample 1 frame per second for trap video
 
     # -------------------------------------------------------------------------
-    # MegaDetector v6 (MDv6) Detection Parameters
+    # MegaDetector / YOLOv8 Animal Detection Parameters
     # -------------------------------------------------------------------------
-    MDV6_MODEL_NAME: str = Field(default="MDV6-yolov10-e")
+    MDV6_MODEL_NAME: str = Field(default="YOLOv8n-MegaDetector")
     MDV6_WEIGHTS_URL: str = Field(
-        default="https://github.com/agentmorris/MegaDetector/releases/download/v6.0/md_v6a_yolov10e.pt"
+        default="https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.pt"
     )
     MDV6_WEIGHTS_PATH: Path = Field(
-        default_factory=lambda: Path(__file__).resolve().parent / "models" / "md_v6a_yolov10e.pt"
+        default_factory=lambda: Path(__file__).resolve().parent / "models" / "yolov8n.pt"
     )
     BLANK_THRESHOLD: float = Field(default=0.20)         # Below 0.20 animal conf -> Quarantine as BLANK
-    TIGER_CONF_THRESHOLD: float = Field(default=0.35)    # Animal/Tiger detection threshold
+    TIGER_CONF_THRESHOLD: float = Field(default=0.30)    # Animal/Tiger detection threshold
     IOU_THRESHOLD: float = Field(default=0.45)           # NMS IoU threshold
     CROP_PADDING_RATIO: float = Field(default=0.08)      # 8% flank context padding
 
@@ -91,7 +91,15 @@ class PipelineConfig(BaseSettings):
     REID_EMBEDDING_DIM: int = Field(default=512)
     REID_INPUT_SIZE: Tuple[int, int] = Field(default=(224, 224))
     REID_WEIGHTS_PATH: Path = Field(
-        default_factory=lambda: Path(__file__).resolve().parent / "models" / "megadescriptor_t_224.pt"
+        default_factory=lambda: (
+            Path(__file__).resolve().parent / "models" / "maga descriptor_t_224.pt"
+            if (Path(__file__).resolve().parent / "models" / "maga descriptor_t_224.pt").exists()
+            else (
+                Path(__file__).resolve().parent / "models" / "maga_descriptor_t_224.pt"
+                if (Path(__file__).resolve().parent / "models" / "maga_descriptor_t_224.pt").exists()
+                else Path(__file__).resolve().parent / "models" / "megadescriptor_t_224.pt"
+            )
+        )
     )
 
     # 3-Tier Re-ID Threshold Calibration
