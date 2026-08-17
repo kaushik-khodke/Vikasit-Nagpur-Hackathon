@@ -15,13 +15,14 @@ import {
   Check,
   RefreshCw
 } from 'lucide-react';
-import { tigerService } from '../service/api';
+import { tigerService, API_BASE_URL } from '../service/api';
 import type { Sighting, TigerProfile } from '../types/tiger';
 
 export const ImageReview: React.FC = () => {
   const [sightingsState, setSightingsState] = useState<Sighting[]>([]);
   const [tigersState, setTigersState] = useState<TigerProfile[]>([]);
   const [selectedSightingId, setSelectedSightingId] = useState<string>('');
+  const [comparedCandidate, setComparedCandidate] = useState<'PRIMARY' | 'SECONDARY'>('PRIMARY');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'VERIFIED'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
@@ -305,82 +306,116 @@ export const ImageReview: React.FC = () => {
           )}
 
           {/* Candidate Breakdown Bar */}
-          <div className="candidates-overview-grid">
-            {/* Top Candidate */}
-            <div className="candidate-card primary-candidate">
-              <div className="cand-rank-badge">TOP CANDIDATE</div>
-              <div className="cand-main-row">
-                <div>
-                  <span className="cand-id font-mono">{selectedSighting.topCandidateId}</span>
-                  <span className="cand-sex">({topCandidateTiger?.sex === 'FEMALE' ? 'Female' : 'Male'}, {topCandidateTiger?.ageClass || 'Adult'})</span>
-                </div>
-                <div className="cand-score telemetry-num">
-                  {(selectedSighting.topCandidateConfidence * 100).toFixed(1)}% Confidence
-                </div>
-              </div>
-              <div className="cand-sub-meta">
-                <span>Stripe Sig: <span className="font-mono">STRIPE-SIG-{selectedSighting.topCandidateId.replace('TGR-', '')}</span></span> • <span>Range: {selectedSighting.zone} Sector</span>
-              </div>
-            </div>
+          {(() => {
+            const activeBaselineCode = (comparedCandidate === 'SECONDARY' && selectedSighting.secondCandidateId)
+              ? selectedSighting.secondCandidateId
+              : selectedSighting.topCandidateId;
 
-            {/* Second Candidate */}
-            {selectedSighting.secondCandidateId && (
-              <div className="candidate-card secondary-candidate">
-                <div className="cand-rank-badge sec">SECOND CANDIDATE</div>
-                <div className="cand-main-row">
-                  <div>
-                    <span className="cand-id font-mono">{selectedSighting.secondCandidateId}</span>
-                    <span className="cand-sex">({secondCandidateTiger?.sex === 'FEMALE' ? 'Female' : 'Male'}, {secondCandidateTiger?.ageClass || 'Adult'})</span>
+            const activeBaselineUrl = (comparedCandidate === 'SECONDARY')
+              ? (secondCandidateTiger?.imageUrl || (selectedSighting.secondCandidateId ? `${API_BASE_URL}/api/v1/atrw/reid/images_test/${selectedSighting.secondCandidateId}_01.jpg` : ''))
+              : (selectedSighting.candidateBaselineUrl || topCandidateTiger?.imageUrl || `${API_BASE_URL}/api/v1/atrw/reid/images_test/${selectedSighting.topCandidateId}_01.jpg`);
+
+            return (
+              <>
+                <div className="candidates-overview-grid">
+                  {/* Top Candidate */}
+                  <div
+                    className={`candidate-card primary-candidate ${comparedCandidate === 'PRIMARY' ? 'active-compare' : ''}`}
+                    onClick={() => setComparedCandidate('PRIMARY')}
+                    style={{ cursor: 'pointer', border: comparedCandidate === 'PRIMARY' ? '2px solid var(--color-forest)' : '1px solid var(--border-subtle)' }}
+                    title="Click to view Top Candidate baseline"
+                  >
+                    <div className="cand-rank-badge">
+                      {comparedCandidate === 'PRIMARY' ? '✓ ACTIVE BASELINE' : 'TOP CANDIDATE (CLICK TO VIEW)'}
+                    </div>
+                    <div className="cand-main-row">
+                      <div>
+                        <span className="cand-id font-mono">{selectedSighting.topCandidateId}</span>
+                        <span className="cand-sex">({topCandidateTiger?.sex === 'FEMALE' ? 'Female' : 'Male'}, {topCandidateTiger?.ageClass || 'Adult'})</span>
+                      </div>
+                      <div className="cand-score telemetry-num">
+                        {(selectedSighting.topCandidateConfidence * 100).toFixed(1)}% Confidence
+                      </div>
+                    </div>
+                    <div className="cand-sub-meta">
+                      <span>Stripe Sig: <span className="font-mono">STRIPE-SIG-{selectedSighting.topCandidateId.replace('TGR-', '')}</span></span> • <span>Range: {selectedSighting.zone} Sector</span>
+                    </div>
                   </div>
-                  <div className="cand-score telemetry-num">
-                    {(selectedSighting.secondCandidateConfidence! * 100).toFixed(1)}% Confidence
+
+                  {/* Second Candidate */}
+                  {selectedSighting.secondCandidateId && (
+                    <div
+                      className={`candidate-card secondary-candidate ${comparedCandidate === 'SECONDARY' ? 'active-compare' : ''}`}
+                      onClick={() => setComparedCandidate('SECONDARY')}
+                      style={{ cursor: 'pointer', border: comparedCandidate === 'SECONDARY' ? '2px solid var(--color-forest)' : '1px solid var(--border-subtle)' }}
+                      title="Click to view Second Candidate baseline"
+                    >
+                      <div className="cand-rank-badge sec">
+                        {comparedCandidate === 'SECONDARY' ? '✓ ACTIVE BASELINE' : 'SECOND CANDIDATE (CLICK TO COMPARE)'}
+                      </div>
+                      <div className="cand-main-row">
+                        <div>
+                          <span className="cand-id font-mono">{selectedSighting.secondCandidateId}</span>
+                          <span className="cand-sex">({secondCandidateTiger?.sex === 'FEMALE' ? 'Female' : 'Male'}, {secondCandidateTiger?.ageClass || 'Adult'})</span>
+                        </div>
+                        <div className="cand-score telemetry-num">
+                          {(selectedSighting.secondCandidateConfidence! * 100).toFixed(1)}% Confidence
+                        </div>
+                      </div>
+                      <div className="cand-sub-meta">
+                        <span>Stripe Sig: <span className="font-mono">STRIPE-SIG-{selectedSighting.secondCandidateId.replace('TGR-', '')}</span></span> • <span>Range: Pench Corridor</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dual Image Comparison Panel */}
+                <div className="flank-compare-grid">
+                  {/* Field Capture */}
+                  <div className="compare-panel">
+                    <div className="panel-header">
+                      <span>Current Observation ({selectedSighting.flankSide} FLANK)</span>
+                      <span className="badge badge-subtle font-mono">{selectedSighting.cameraTrapId}</span>
+                    </div>
+                    <div className="image-frame">
+                      <img
+                        src={selectedSighting.thumbnailUrl}
+                        alt="Field Observation Evidence"
+                        className="compare-img"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1503066211613-c17ebc9daef0?auto=format&fit=crop&w=600&q=80';
+                        }}
+                      />
+                      <div className="overlay-flank-box">
+                        <span className="bounding-label font-mono">Camera Frame Evidence Ref ({selectedSighting.captureId})</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reference Registry Profile */}
+                  <div className="compare-panel">
+                    <div className="panel-header">
+                      <span>Cataloged Profile Baseline ({activeBaselineCode})</span>
+                      <span className="badge badge-forest font-mono">STRIPE-SIG-{activeBaselineCode.replace('TGR-', '')}</span>
+                    </div>
+                    <div className="image-frame">
+                      <img
+                        src={activeBaselineUrl}
+                        alt={activeBaselineCode}
+                        className="compare-img"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1561731216-c3a4d99437d5?auto=format&fit=crop&w=600&q=80';
+                        }}
+                      />
+                      <div className="overlay-flank-box">
+                        <span className="bounding-label font-mono">Biometric Flank Baseline ({activeBaselineCode})</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="cand-sub-meta">
-                  <span>Stripe Sig: <span className="font-mono">STRIPE-SIG-{selectedSighting.secondCandidateId.replace('TGR-', '')}</span></span> • <span>Range: Pench Corridor</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Dual Image Comparison Panel */}
-          <div className="flank-compare-grid">
-            {/* Field Capture */}
-            <div className="compare-panel">
-              <div className="panel-header">
-                <span>Current Observation ({selectedSighting.flankSide} FLANK)</span>
-                <span className="badge badge-subtle font-mono">{selectedSighting.cameraTrapId}</span>
-              </div>
-              <div className="image-frame">
-                <img
-                  src={selectedSighting.thumbnailUrl}
-                  alt="Field Observation Evidence"
-                  className="compare-img"
-                />
-                <div className="overlay-flank-box">
-                  <span className="bounding-label font-mono">Camera Frame Evidence Ref</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Reference Registry Profile */}
-            <div className="compare-panel">
-              <div className="panel-header">
-                <span>Cataloged Profile Baseline ({selectedSighting.topCandidateId})</span>
-                <span className="badge badge-forest font-mono">STRIPE-SIG-{selectedSighting.topCandidateId.replace('TGR-', '')}</span>
-              </div>
-              <div className="image-frame">
-                <img
-                  src={selectedSighting.thumbnailUrl}
-                  alt={selectedSighting.topCandidateId}
-                  className="compare-img"
-                />
-                <div className="overlay-flank-box">
-                  <span className="bounding-label font-mono">Biometric Flank Baseline</span>
-                </div>
-              </div>
-            </div>
-          </div>
+              </>
+            );
+          })()}
 
           {/* Environmental Metadata Strip */}
           <div className="metadata-strip">

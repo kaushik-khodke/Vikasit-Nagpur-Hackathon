@@ -69,55 +69,30 @@ app.mount("/api/v1/atrw", StaticFiles(directory=str(settings.ATRW_DIR)), name="a
 # -----------------------------------------------------------------------------
 # In-Memory Batches & Active Streaming Sessions State
 # -----------------------------------------------------------------------------
-in_memory_batches: List[Dict[str, Any]] = [
-    {
-        "batchId": "BATCH-2026-0817-A",
-        "uploadedAt": "2026-08-17T05:30:00Z",
-        "uploadedBy": "RFO Officer R. Sharma (Turia Range)",
-        "trapStation": "Turia Core Waterhole (CAM-01)",
-        "cameraCode": "CAM-01",
-        "totalImages": 380,
-        "blankImages": 230,
-        "imagesRetained": 150,
-        "imagesQuarantined": 230,
-        "imagesRequiringReview": 12,
-        "tigersDetected": 9,
-        "status": "COMPLETED",
-        "progressPercent": 100,
-    },
-    {
-        "batchId": "BATCH-2026-0817-B",
-        "uploadedAt": "2026-08-17T07:15:00Z",
-        "uploadedBy": "Forester S. Meshram (Karmajhiri Beat)",
-        "trapStation": "Karmajhiri Riverbed Station (CAM-02)",
-        "cameraCode": "CAM-02",
-        "totalImages": 420,
-        "blankImages": 265,
-        "imagesRetained": 155,
-        "imagesQuarantined": 265,
-        "imagesRequiringReview": 8,
-        "tigersDetected": 11,
-        "status": "COMPLETED",
-        "progressPercent": 100,
-    },
-    {
-        "batchId": "BATCH-2026-0817-C",
-        "uploadedAt": "2026-08-17T09:40:00Z",
-        "uploadedBy": "Forest Guard V. Uike (Jamtara Beat)",
-        "trapStation": "Jamtara Ridge Checkpoint (CAM-03)",
-        "cameraCode": "CAM-03",
-        "totalImages": 270,
-        "blankImages": 153,
-        "imagesRetained": 117,
-        "imagesQuarantined": 153,
-        "imagesRequiringReview": 4,
-        "tigersDetected": 5,
-        "status": "COMPLETED",
-        "progressPercent": 100,
-    }
-]
+# Default to empty list so batches and totals start dynamically from 0
+in_memory_batches: List[Dict[str, Any]] = []
 
 active_stream_sessions: Dict[str, Dict[str, Any]] = {}
+
+def get_tiger_proof_url(tiger_code: str, fallback_idx: int = 2) -> str:
+    """Return URL for a field observation proof snapshot of this tiger."""
+    proofs = sorted(list(settings.EVIDENCE_RECORDINGS_DIR.glob(f"proof_snapshot_{tiger_code}_*.jpg")))
+    if proofs:
+        return f"/api/v1/evidence/{proofs[0].name}"
+    atrw_img = settings.ATRW_DIR / "reid" / "images_test" / f"{tiger_code}_{fallback_idx:02d}.jpg"
+    if atrw_img.exists():
+        return f"/api/v1/atrw/reid/images_test/{tiger_code}_{fallback_idx:02d}.jpg"
+    return "/api/v1/evidence/proof_test_sample.jpg"
+
+def get_tiger_baseline_url(tiger_code: str) -> str:
+    """Return URL for cataloged baseline profile image of this tiger."""
+    atrw_img = settings.ATRW_DIR / "reid" / "images_test" / f"{tiger_code}_01.jpg"
+    if atrw_img.exists():
+        return f"/api/v1/atrw/reid/images_test/{tiger_code}_01.jpg"
+    proofs = sorted(list(settings.EVIDENCE_RECORDINGS_DIR.glob(f"proof_snapshot_{tiger_code}_*.jpg")))
+    if len(proofs) > 1:
+        return f"/api/v1/evidence/{proofs[-1].name}"
+    return "/api/v1/evidence/proof_test_sample.jpg"
 
 # Ensure at least one proof sample image exists for visual proof
 sample_proof = settings.EVIDENCE_RECORDINGS_DIR / "proof_test_sample.jpg"
@@ -385,6 +360,7 @@ async def generate_mjpeg_stream(session_id: str):
                 cv2.imwrite(str(snap_path), display_frame)
                 saved_snapshot = True
                 session["evidenceRecorded"] = True
+                session["snapshotFilename"] = snap_name
 
             # High-Tech HUD Header Bar
             cv2.rectangle(display_frame, (0, 0), (target_w, 28), (15, 20, 18), -1)
@@ -415,10 +391,12 @@ async def generate_mjpeg_stream(session_id: str):
         session["status"] = "COMPLETED"
 
         # Register completed batch in database log
-        batch_id = f"BATCH-2026-0817-{chr(65 + (len(in_memory_batches) % 26))}"
-        blanks = max(1, session.get("blankCount", 0))
-        retained = max(1, session["processedFrames"] - blanks)
-        tigers = max(1, session.get("tigersDetected", 1))
+        batch_letter = chr(65 + (len(in_memory_batches) % 26))
+        batch_id = f"BATCH-2026-0817-{batch_letter}"
+        blanks = session.get("blankCount", 0)
+        total_f = session["processedFrames"]
+        retained = max(0, total_f - blanks)
+        tigers = session.get("tigersDetected", 0)
 
         new_batch = {
             "batchId": batch_id,
@@ -427,16 +405,49 @@ async def generate_mjpeg_stream(session_id: str):
             "trapStation": session["stationName"],
             "cameraCode": session["cameraCode"],
             "sourceFile": session["filename"],
-            "totalImages": session["processedFrames"],
+            "totalImages": total_f,
             "blankImages": blanks,
             "imagesRetained": retained,
             "imagesQuarantined": blanks,
-            "imagesRequiringReview": 2,
+            "imagesRequiringReview": min(2, retained),
             "tigersDetected": tigers,
             "status": "COMPLETED",
             "progressPercent": 100,
         }
         in_memory_batches.insert(0, new_batch)
+
+        # Create dynamic sighting record for Biometric Image Review
+        detected_tiger = primary_tiger if tiger_in_frame else (session.get("detectedTigersList", ["TGR-001"])[0] if session.get("detectedTigersList") else "TGR-001")
+        snap_file = session.get("snapshotFilename", f"proof_snapshot_{detected_tiger}.jpg")
+        thumb_url = f"/api/v1/evidence/{snap_file}" if (settings.EVIDENCE_RECORDINGS_DIR / snap_file).exists() else get_tiger_proof_url(detected_tiger)
+        baseline_url = get_tiger_baseline_url(detected_tiger)
+
+        new_sighting = {
+            "id": f"SGT-LIVE-{uuid.uuid4().hex[:6]}",
+            "captureId": f"CAP-{session['cameraCode']}-{uuid.uuid4().hex[:4].upper()}",
+            "topCandidateId": detected_tiger,
+            "topCandidateName": f"Live Detected {detected_tiger}",
+            "topCandidateConfidence": 0.95 if tiger_in_frame else 0.91,
+            "secondCandidateId": "TGR-004" if detected_tiger != "TGR-004" else "TGR-002",
+            "secondCandidateName": "Alternative Baseline",
+            "secondCandidateConfidence": 0.77,
+            "isAmbiguous": False,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "cameraTrapId": session["cameraCode"],
+            "cameraTrapName": session["stationName"],
+            "zone": "Turia" if "Turia" in session["stationName"] else ("Karmajhiri" if "Karmajhiri" in session["stationName"] else "Jamtara"),
+            "reviewStatus": "PENDING_REVIEW",
+            "location": {"lat": 21.7245, "lng": 79.3182},
+            "flankSide": "RIGHT",
+            "thumbnailUrl": thumb_url,
+            "candidateBaselineUrl": baseline_url,
+            "environmentalConditions": {
+                "timeOfDay": "DAY",
+                "weather": "Live Capture Feed",
+                "temperatureCelsius": 26.5,
+            },
+        }
+        in_memory_sightings.insert(0, new_sighting)
 
 
 @app.get("/api/v1/stream/live/{session_id}")
@@ -709,6 +720,52 @@ def get_processing_stats() -> Dict[str, Any]:
     }
 
 
+@app.post("/api/v1/processing/reset-batches")
+def reset_batches() -> Dict[str, Any]:
+    """Reset and clear all camera-trap batch ingestion logs to start fresh from 0."""
+    in_memory_batches.clear()
+    return {"success": True, "message": "All batch ingestion logs cleared. Stats reset to 0."}
+
+
+@app.post("/api/v1/processing/seed-batches")
+def seed_demo_batches() -> Dict[str, Any]:
+    """Seed sample demo batches for demonstration purposes."""
+    in_memory_batches.clear()
+    in_memory_batches.extend([
+        {
+            "batchId": "BATCH-2026-0817-A",
+            "uploadedAt": "2026-08-17T05:30:00Z",
+            "uploadedBy": "RFO Officer R. Sharma (Turia Range)",
+            "trapStation": "Turia Core Waterhole (CAM-01)",
+            "cameraCode": "CAM-01",
+            "totalImages": 380,
+            "blankImages": 230,
+            "imagesRetained": 150,
+            "imagesQuarantined": 230,
+            "imagesRequiringReview": 12,
+            "tigersDetected": 9,
+            "status": "COMPLETED",
+            "progressPercent": 100,
+        },
+        {
+            "batchId": "BATCH-2026-0817-B",
+            "uploadedAt": "2026-08-17T07:15:00Z",
+            "uploadedBy": "Forester S. Meshram (Karmajhiri Beat)",
+            "trapStation": "Karmajhiri Riverbed Station (CAM-02)",
+            "cameraCode": "CAM-02",
+            "totalImages": 420,
+            "blankImages": 265,
+            "imagesRetained": 155,
+            "imagesQuarantined": 265,
+            "imagesRequiringReview": 8,
+            "tigersDetected": 11,
+            "status": "COMPLETED",
+            "progressPercent": 100,
+        }
+    ])
+    return {"success": True, "message": "Demo batches loaded successfully.", "batches": in_memory_batches}
+
+
 @app.post("/api/v1/processing/restore-quarantine")
 def restore_quarantine(data: Dict[str, Any]) -> Dict[str, Any]:
     """Restore quarantined blank frames back into the active fauna review queue."""
@@ -750,8 +807,8 @@ in_memory_sightings: List[Dict[str, Any]] = [
         "reviewStatus": "PENDING_REVIEW",
         "location": {"lat": 21.7245, "lng": 79.3182},
         "flankSide": "RIGHT",
-        "thumbnailUrl": "/api/v1/evidence/proof_test_sample.jpg",
-        "candidateBaselineUrl": "/api/v1/evidence/proof_test_sample.jpg",
+        "thumbnailUrl": get_tiger_proof_url("TGR-001", 2),
+        "candidateBaselineUrl": get_tiger_baseline_url("TGR-001"),
         "environmentalConditions": {
             "timeOfDay": "DAWN",
             "weather": "Clear Forest Canopy",
@@ -765,6 +822,7 @@ in_memory_sightings: List[Dict[str, Any]] = [
         "topCandidateName": "Raiyyakassa Male",
         "topCandidateConfidence": 0.95,
         "secondCandidateId": "TGR-001",
+        "secondCandidateName": "Bagheera",
         "secondCandidateConfidence": 0.74,
         "isAmbiguous": False,
         "timestamp": "2026-08-17T09:52:00Z",
@@ -774,8 +832,8 @@ in_memory_sightings: List[Dict[str, Any]] = [
         "reviewStatus": "VERIFIED",
         "location": {"lat": 21.7310, "lng": 79.3105},
         "flankSide": "LEFT",
-        "thumbnailUrl": "/api/v1/evidence/proof_test_sample.jpg",
-        "candidateBaselineUrl": "/api/v1/evidence/proof_test_sample.jpg",
+        "thumbnailUrl": get_tiger_proof_url("TGR-004", 2),
+        "candidateBaselineUrl": get_tiger_baseline_url("TGR-004"),
         "environmentalConditions": {
             "timeOfDay": "DAY",
             "weather": "Sunny",
@@ -789,6 +847,7 @@ in_memory_sightings: List[Dict[str, Any]] = [
         "topCandidateName": "Langdi (Sub-adult Female)",
         "topCandidateConfidence": 0.93,
         "secondCandidateId": "TGR-002",
+        "secondCandidateName": "Collarwali Lineage",
         "secondCandidateConfidence": 0.78,
         "isAmbiguous": False,
         "timestamp": "2026-08-17T07:20:00Z",
@@ -798,8 +857,8 @@ in_memory_sightings: List[Dict[str, Any]] = [
         "reviewStatus": "VERIFIED",
         "location": {"lat": 21.7050, "lng": 79.3200},
         "flankSide": "RIGHT",
-        "thumbnailUrl": "/api/v1/evidence/proof_test_sample.jpg",
-        "candidateBaselineUrl": "/api/v1/evidence/proof_test_sample.jpg",
+        "thumbnailUrl": get_tiger_proof_url("TGR-003", 2),
+        "candidateBaselineUrl": get_tiger_baseline_url("TGR-003"),
         "environmentalConditions": {
             "timeOfDay": "DAWN",
             "weather": "Morning Mist",
@@ -813,6 +872,7 @@ in_memory_sightings: List[Dict[str, Any]] = [
         "topCandidateName": "Collarwali Lineage (Female)",
         "topCandidateConfidence": 0.92,
         "secondCandidateId": "TGR-003",
+        "secondCandidateName": "Langdi",
         "secondCandidateConfidence": 0.76,
         "isAmbiguous": False,
         "timestamp": "2026-08-17T03:10:00Z",
@@ -822,34 +882,51 @@ in_memory_sightings: List[Dict[str, Any]] = [
         "reviewStatus": "VERIFIED",
         "location": {"lat": 21.7245, "lng": 79.3182},
         "flankSide": "RIGHT",
-        "thumbnailUrl": "/api/v1/evidence/proof_test_sample.jpg",
-        "candidateBaselineUrl": "/api/v1/evidence/proof_test_sample.jpg",
+        "thumbnailUrl": get_tiger_proof_url("TGR-002", 2),
+        "candidateBaselineUrl": get_tiger_baseline_url("TGR-002"),
         "environmentalConditions": {
             "timeOfDay": "NIGHT",
             "weather": "Overcast",
             "temperatureCelsius": 19.5,
         },
     },
+    {
+        "id": "SGT-2026-0817-05",
+        "captureId": "CAP-TR-0817-05",
+        "topCandidateId": "TGR-005",
+        "topCandidateName": "Rukhad Male (Transient)",
+        "topCandidateConfidence": 0.89,
+        "secondCandidateId": "TGR-001",
+        "secondCandidateName": "Bagheera",
+        "secondCandidateConfidence": 0.72,
+        "isAmbiguous": False,
+        "timestamp": "2026-08-17T11:35:00Z",
+        "cameraTrapId": "CAM-03",
+        "cameraTrapName": "Jamtara Ridge Checkpoint (CAM-03)",
+        "zone": "Jamtara",
+        "reviewStatus": "PENDING_REVIEW",
+        "location": {"lat": 21.7050, "lng": 79.3200},
+        "flankSide": "LEFT",
+        "thumbnailUrl": get_tiger_proof_url("TGR-005", 2),
+        "candidateBaselineUrl": get_tiger_baseline_url("TGR-005"),
+        "environmentalConditions": {
+            "timeOfDay": "DAY",
+            "weather": "Sunny Clear",
+            "temperatureCelsius": 29.0,
+        },
+    },
 ]
-
-# Update sightings thumbnails dynamically if real evidence files exist
-evidence_files = sorted(list(settings.EVIDENCE_RECORDINGS_DIR.glob("*.jpg")))
-if evidence_files:
-    for idx, s in enumerate(in_memory_sightings):
-        efile = evidence_files[idx % len(evidence_files)]
-        s["thumbnailUrl"] = f"/api/v1/evidence/{efile.name}"
-        s["candidateBaselineUrl"] = f"/api/v1/evidence/{efile.name}"
 
 
 @app.get("/api/v1/sightings")
 def get_sightings(limit: int = 20) -> List[Dict[str, Any]]:
-    """Retrieve camera-trap sightings and biometric verification queue items."""
-    current_evidence = sorted(list(settings.EVIDENCE_RECORDINGS_DIR.glob("*.jpg")))
-    if current_evidence:
-        for idx, s in enumerate(in_memory_sightings):
-            efile = current_evidence[idx % len(current_evidence)]
-            s["thumbnailUrl"] = f"/api/v1/evidence/{efile.name}"
-            s["candidateBaselineUrl"] = f"/api/v1/evidence/{efile.name}"
+    """Retrieve camera-trap sightings and biometric verification queue items with distinct proof & baseline images."""
+    for s in in_memory_sightings:
+        top_code = s.get("topCandidateId", "TGR-001")
+        if not s.get("thumbnailUrl") or s.get("thumbnailUrl") == "/api/v1/evidence/proof_test_sample.jpg":
+            s["thumbnailUrl"] = get_tiger_proof_url(top_code, 2)
+        if not s.get("candidateBaselineUrl") or s.get("candidateBaselineUrl") == "/api/v1/evidence/proof_test_sample.jpg":
+            s["candidateBaselineUrl"] = get_tiger_baseline_url(top_code)
     return in_memory_sightings[:limit]
 
 
@@ -915,13 +992,14 @@ def create_new_tiger_from_sighting(req: CreateTigerRequest) -> Dict[str, Any]:
 # -----------------------------------------------------------------------------
 @app.get("/api/v1/tigers")
 def get_all_tigers() -> List[Dict[str, Any]]:
-    """Retrieve all catalogued tiger profiles from database."""
+    """Retrieve all catalogued tiger profiles from database with distinct baseline photos."""
     profiles = []
     if not db.is_connected:
         for uid, t in db._offline_tigers.items():
+            code = t.public_code
             profiles.append({
-                "id": t.public_code,
-                "code": t.public_code,
+                "id": code,
+                "code": code,
                 "name": t.name,
                 "sex": t.sex,
                 "ageClass": "ADULT" if "Male" in (t.name or "") or "Female" in (t.name or "") else "SUB_ADULT",
@@ -929,7 +1007,7 @@ def get_all_tigers() -> List[Dict[str, Any]]:
                 "lastDetected": t.last_seen_at.isoformat() if t.last_seen_at else "2026-08-17T06:14:00Z",
                 "detectionCount": 38,
                 "confidence": t.identity_confidence or 0.94,
-                "stripeSignature": f"STRIPE-SIG-{t.public_code.replace('TGR-', '')}",
+                "stripeSignature": f"STRIPE-SIG-{code.replace('TGR-', '')}",
                 "primaryZone": "Turia",
                 "activityStatus": "ACTIVE_RESIDENT",
                 "cameraStations": ["CAM-01", "CAM-02", "CAM-03"],
@@ -945,43 +1023,101 @@ def get_all_tigers() -> List[Dict[str, Any]]:
                         [21.745, 79.300]
                     ]
                 },
-                "imageUrl": "/api/v1/evidence/proof_test_sample.jpg",
+                "imageUrl": get_tiger_baseline_url(code),
                 "isSynthetic": False,
             })
     return profiles
 
 
+# -----------------------------------------------------------------------------
+# Alerts & Real-time Perimeter Alarm State
+# -----------------------------------------------------------------------------
+in_memory_alerts: List[Dict[str, Any]] = [
+    {
+        "id": "ALT-0817-01",
+        "title": "Camera Station CAM-03 Battery Low",
+        "description": "Solar charging degraded at Jamtara Ridge Checkpoint. Current: 14%",
+        "severity": "WARNING",
+        "category": "CAMERA_STATION_MAINTENANCE",
+        "timestamp": "2026-08-17T08:30:00Z",
+        "acknowledged": False,
+        "stationId": "CAM-03",
+        "zone": "Jamtara",
+        "prescribedAction": "Inspect lens cleanliness and replace AA battery pack.",
+    },
+    {
+        "id": "ALT-0817-02",
+        "title": "Ambiguous Stripe Sighting Requires Verification",
+        "description": "Sighting SGT-2026-0817-01 candidate score gap < 8%. Mandatory biologist signoff required.",
+        "severity": "CRITICAL",
+        "category": "UNIDENTIFIED_STRIPE_CAPTURE",
+        "timestamp": "2026-08-17T06:15:00Z",
+        "acknowledged": False,
+        "stationId": "CAM-01",
+        "associatedTigerId": "TGR-001",
+        "zone": "Turia",
+        "prescribedAction": "Perform manual stripe verification in Image Review.",
+    }
+]
+
+class TriggerAlertRequest(BaseModel):
+    cameraId: str
+    cameraName: str
+    tigerId: str
+    confidence: float
+    flank: str = "RIGHT"
+    zone: str = "Turia"
+    nearbyVillage: Optional[str] = None
+    distanceMeters: Optional[int] = None
+    snapshotUrl: Optional[str] = None
+
 @app.get("/api/v1/alerts")
 def get_alerts() -> List[Dict[str, Any]]:
-    """Retrieve operational alert notifications for sidebar and header."""
-    return [
-        {
-            "id": "ALT-0817-01",
-            "title": "Camera Station CAM-03 Battery Low",
-            "description": "Solar charging degraded at Jamtara Ridge Checkpoint. Current: 14%",
-            "severity": "WARNING",
-            "timestamp": "2026-08-17T08:30:00Z",
-            "acknowledged": False,
-            "stationId": "CAM-03",
-        },
-        {
-            "id": "ALT-0817-02",
-            "title": "Ambiguous Stripe Sighting Requires Verification",
-            "description": "Sighting SGT-2026-0817-01 candidate score gap < 8%. Mandatory biologist signoff required.",
-            "severity": "CRITICAL",
-            "timestamp": "2026-08-17T06:15:00Z",
-            "acknowledged": False,
-            "stationId": "CAM-01",
-        }
-    ]
+    """Retrieve operational alert notifications for sidebar, map, and alerts feed."""
+    return in_memory_alerts
+
+
+@app.post("/api/v1/alerts/trigger")
+def trigger_perimeter_alert(req: TriggerAlertRequest) -> Dict[str, Any]:
+    """Trigger a real-time perimeter alert when an edge camera detects a tiger."""
+    alert_id = f"ALT-PERIMETER-{uuid.uuid4().hex[:6]}"
+    village_txt = req.nearbyVillage or "Nearby Village Settlement"
+    dist_txt = f"{req.distanceMeters}m" if req.distanceMeters else "350m"
+
+    new_alert = {
+        "id": alert_id,
+        "title": f"🚨 PERIMETER TIGER ALERT: {req.cameraName}",
+        "description": f"Individual {req.tigerId} ({(req.confidence * 100):.0f}% confidence) detected at edge station {req.cameraId}, proximate to {village_txt} ({dist_txt} from Pench boundary). Perimeter advisory dispatched.",
+        "severity": "CRITICAL",
+        "category": "PERIMETER_DETECTION",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "acknowledged": False,
+        "stationId": req.cameraId,
+        "associatedTigerId": req.tigerId,
+        "associatedCameraId": req.cameraId,
+        "zone": req.zone,
+        "prescribedAction": f"Issue automated advisory to {village_txt} Forest Committee and dispatch perimeter patrol.",
+    }
+    in_memory_alerts.insert(0, new_alert)
+    logger.warning(f"🚨 PERIMETER ALERT TRIGGERED at {req.cameraId} for tiger {req.tigerId} near {village_txt}")
+
+    return {
+        "success": True,
+        "message": f"Perimeter alert dispatched for {req.cameraName}.",
+        "alert": new_alert,
+    }
 
 
 @app.get("/api/v1/cameras")
 def get_camera_stations() -> List[Dict[str, Any]]:
-    """Retrieve all camera-trap station locations and status."""
+    """Retrieve all camera-trap station locations including the 5 edge perimeter stations."""
+    # Check if any camera has an active perimeter alert
+    active_camera_ids = {a.get("stationId") or a.get("associatedCameraId") for a in in_memory_alerts if not a.get("acknowledged")}
+
     return [
         {
             "id": "CAM-01",
+            "code": "CAM-01",
             "name": "Turia Core Waterhole",
             "zone": "Turia",
             "status": "ONLINE",
@@ -989,9 +1125,12 @@ def get_camera_stations() -> List[Dict[str, Any]]:
             "longitude": 79.3182,
             "batteryPercent": 92,
             "storagePercent": 48,
+            "isEdgeCamera": False,
+            "hasActiveAlert": "CAM-01" in active_camera_ids,
         },
         {
             "id": "CAM-02",
+            "code": "CAM-02",
             "name": "Karmajhiri Riverbed Station",
             "zone": "Karmajhiri",
             "status": "ONLINE",
@@ -999,9 +1138,12 @@ def get_camera_stations() -> List[Dict[str, Any]]:
             "longitude": 79.3105,
             "batteryPercent": 85,
             "storagePercent": 62,
+            "isEdgeCamera": False,
+            "hasActiveAlert": "CAM-02" in active_camera_ids,
         },
         {
             "id": "CAM-03",
+            "code": "CAM-03",
             "name": "Jamtara Ridge Checkpoint",
             "zone": "Jamtara",
             "status": "WARNING",
@@ -1009,6 +1151,84 @@ def get_camera_stations() -> List[Dict[str, Any]]:
             "longitude": 79.3200,
             "batteryPercent": 14,
             "storagePercent": 79,
+            "isEdgeCamera": False,
+            "hasActiveAlert": "CAM-03" in active_camera_ids,
+        },
+        # 5 Edge Perimeter Cameras
+        {
+            "id": "CAM-EDGE-01",
+            "code": "CAM-EDGE-01",
+            "name": "Turia-Kohka Perimeter Watch (CAM-EDGE-01)",
+            "zone": "Turia",
+            "status": "ONLINE",
+            "latitude": 21.7140,
+            "longitude": 79.3080,
+            "batteryPercent": 96,
+            "storagePercent": 34,
+            "isEdgeCamera": True,
+            "nearbyVillage": "Turia & Kohka Villages",
+            "distanceToVillageMeters": 380,
+            "hasActiveAlert": "CAM-EDGE-01" in active_camera_ids,
+        },
+        {
+            "id": "CAM-EDGE-02",
+            "code": "CAM-EDGE-02",
+            "name": "Khursapar Buffer Ridge Station (CAM-EDGE-02)",
+            "zone": "Khursapar",
+            "status": "ONLINE",
+            "latitude": 21.6260,
+            "longitude": 79.2680,
+            "batteryPercent": 88,
+            "storagePercent": 41,
+            "isEdgeCamera": True,
+            "nearbyVillage": "Khursapar Village",
+            "distanceToVillageMeters": 420,
+            "hasActiveAlert": "CAM-EDGE-02" in active_camera_ids,
+        },
+        {
+            "id": "CAM-EDGE-03",
+            "code": "CAM-EDGE-03",
+            "name": "Sillari Maharashtra Border Edge (CAM-EDGE-03)",
+            "zone": "Buffer Area",
+            "status": "ONLINE",
+            "latitude": 21.5930,
+            "longitude": 79.3080,
+            "batteryPercent": 91,
+            "storagePercent": 29,
+            "isEdgeCamera": True,
+            "nearbyVillage": "Sillari Village",
+            "distanceToVillageMeters": 310,
+            "hasActiveAlert": "CAM-EDGE-03" in active_camera_ids,
+        },
+        {
+            "id": "CAM-EDGE-04",
+            "code": "CAM-EDGE-04",
+            "name": "Jamtara East Escarpment Station (CAM-EDGE-04)",
+            "zone": "Jamtara",
+            "status": "ONLINE",
+            "latitude": 21.6920,
+            "longitude": 79.4180,
+            "batteryPercent": 84,
+            "storagePercent": 52,
+            "isEdgeCamera": True,
+            "nearbyVillage": "Jamtara Village",
+            "distanceToVillageMeters": 450,
+            "hasActiveAlert": "CAM-EDGE-04" in active_camera_ids,
+        },
+        {
+            "id": "CAM-EDGE-05",
+            "code": "CAM-EDGE-05",
+            "name": "Rukhad Corridor Outpost (CAM-EDGE-05)",
+            "zone": "Rukhad",
+            "status": "ONLINE",
+            "latitude": 21.8780,
+            "longitude": 79.4280,
+            "batteryPercent": 95,
+            "storagePercent": 22,
+            "isEdgeCamera": True,
+            "nearbyVillage": "Rukhad Village",
+            "distanceToVillageMeters": 390,
+            "hasActiveAlert": "CAM-EDGE-05" in active_camera_ids,
         },
     ]
 

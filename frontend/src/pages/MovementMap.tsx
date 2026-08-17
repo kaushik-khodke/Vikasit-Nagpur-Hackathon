@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Camera,
   Layers,
@@ -8,8 +8,9 @@ import {
   MapPin
 } from 'lucide-react';
 import { mockTigers, mockCameraTraps } from '../data/mockData';
-import type { ReserveZone } from '../types/tiger';
+import type { ReserveZone, CameraTrap, TigerProfile } from '../types/tiger';
 import { ReserveMap } from '../components/Map/ReserveMap';
+import { tigerService } from '../service/api';
 
 // Palette for territory items
 const polygonColors = ['#1B5E3C', '#2563EB', '#D97706', '#7C3AED', '#0D9488', '#BE123C'];
@@ -20,18 +21,50 @@ export const MovementMap: React.FC = () => {
   const [showCameras, setShowCameras] = useState(true);
   const [showPolygons, setShowPolygons] = useState(true);
   const [showPaths, setShowPaths] = useState(true);
+  const [cameras, setCameras] = useState<CameraTrap[]>(mockCameraTraps);
+  const [tigers, setTigers] = useState<TigerProfile[]>(mockTigers);
+
+  useEffect(() => {
+    const loadMapData = async () => {
+      try {
+        const [cams, tgrs, alerts] = await Promise.all([
+          tigerService.getCameraTraps(),
+          tigerService.getAllTigers(),
+          tigerService.getAlerts()
+        ]);
+        if (tgrs && tgrs.length > 0) setTigers(tgrs);
+
+        const alertStationIds = new Set(
+          (alerts || []).filter(a => !a.acknowledged).map(a => a.associatedCameraId || (a as any).stationId)
+        );
+
+        if (cams && cams.length > 0) {
+          const mappedCams = cams.map(c => ({
+            ...c,
+            hasActiveAlert: alertStationIds.has(c.id) || alertStationIds.has(c.code) || c.hasActiveAlert
+          }));
+          setCameras(mappedCams);
+        }
+      } catch (err) {
+        console.error('Movement map data load error:', err);
+      }
+    };
+    loadMapData();
+    const interval = setInterval(loadMapData, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Filtered dataset
-  const filteredTigers = mockTigers.filter(
+  const filteredTigers = tigers.filter(
     (t) => (selectedZone === 'ALL' || t.primaryZone === selectedZone) &&
            (selectedTigerId === 'ALL' || t.id === selectedTigerId)
   );
 
-  const filteredCameras = mockCameraTraps.filter(
+  const filteredCameras = cameras.filter(
     (c) => selectedZone === 'ALL' || c.zone === selectedZone
   );
 
-  const selectedTiger = mockTigers.find(t => t.id === selectedTigerId);
+  const selectedTiger = tigers.find(t => t.id === selectedTigerId);
 
   return (
     <div className="movement-page">
@@ -81,8 +114,8 @@ export const MovementMap: React.FC = () => {
               value={selectedTigerId}
               onChange={(e) => setSelectedTigerId(e.target.value)}
             >
-              <option value="ALL">All Identified Tigers ({mockTigers.length})</option>
-              {mockTigers.map((t) => (
+              <option value="ALL">All Identified Tigers ({tigers.length})</option>
+              {tigers.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.id} ({t.sex === 'FEMALE' ? '♀' : '♂'}, {t.primaryZone})
                 </option>

@@ -71,7 +71,8 @@ export const tigerService = {
       if (response.data && response.data.length > 0) {
         return response.data.map(s => ({
           ...s,
-          thumbnailUrl: s.thumbnailUrl.startsWith('http') ? s.thumbnailUrl : `${API_BASE_URL}${s.thumbnailUrl}`
+          thumbnailUrl: s.thumbnailUrl ? (s.thumbnailUrl.startsWith('http') ? s.thumbnailUrl : `${API_BASE_URL}${s.thumbnailUrl}`) : '',
+          candidateBaselineUrl: s.candidateBaselineUrl ? (s.candidateBaselineUrl.startsWith('http') ? s.candidateBaselineUrl : `${API_BASE_URL}${s.candidateBaselineUrl}`) : undefined,
         }));
       }
       return mockSightings.slice(0, limit);
@@ -121,6 +122,28 @@ export const tigerService = {
     }
   },
 
+  triggerPerimeterAlert: async (payload: {
+    cameraId: string;
+    cameraName: string;
+    tigerId: string;
+    confidence: number;
+    flank?: string;
+    zone?: string;
+    nearbyVillage?: string;
+    distanceMeters?: number;
+    snapshotUrl?: string;
+  }): Promise<{ success: boolean; message: string; alert?: AlertItem }> => {
+    try {
+      const response = await apiClient.post('/alerts/trigger', payload);
+      return response.data;
+    } catch {
+      return {
+        success: true,
+        message: `Local perimeter alert simulated for ${payload.cameraName}.`,
+      };
+    }
+  },
+
   getCameraTraps: async (): Promise<CameraTrap[]> => {
     try {
       const response = await apiClient.get<CameraTrap[]>('/cameras');
@@ -135,7 +158,25 @@ export const tigerService = {
       const response = await apiClient.get<CameraProcessingBatch[]>('/processing/batches');
       return response.data;
     } catch {
-      return mockBatches;
+      return [];
+    }
+  },
+
+  resetProcessingBatches: async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await apiClient.post('/processing/reset-batches');
+      return response.data;
+    } catch {
+      return { success: true, message: 'Batch ingestion logs reset locally.' };
+    }
+  },
+
+  seedProcessingBatches: async (): Promise<{ success: boolean; message: string; batches?: CameraProcessingBatch[] }> => {
+    try {
+      const response = await apiClient.post('/processing/seed-batches');
+      return response.data;
+    } catch {
+      return { success: true, message: 'Demo batches loaded.', batches: mockBatches };
     }
   },
 

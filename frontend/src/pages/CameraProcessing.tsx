@@ -73,7 +73,7 @@ const getInitialBatches = (): CameraProcessingBatch[] => {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
-  } catch {}
+  } catch { }
   return mockBatches;
 };
 
@@ -84,7 +84,7 @@ const getInitialQuarantinedGallery = () => {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
-  } catch {}
+  } catch { }
   return SAMPLE_QUARANTINED_FRAMES;
 };
 
@@ -165,6 +165,32 @@ export const CameraProcessing: React.FC = () => {
   useEffect(() => {
     loadBatches();
   }, []);
+
+  const handleResetBatches = async () => {
+    try {
+      await tigerService.resetProcessingBatches();
+      setBatches([]);
+      setFeedbackMsg('All batch logs cleared. Counters reset to 0.');
+      setTimeout(() => setFeedbackMsg(null), 4000);
+    } catch (err) {
+      console.error('Failed to reset batches:', err);
+    }
+  };
+
+  const handleSeedBatches = async () => {
+    try {
+      const res = await tigerService.seedProcessingBatches();
+      if (res.batches) {
+        setBatches(res.batches);
+      } else {
+        loadBatches();
+      }
+      setFeedbackMsg('Demo field batches loaded.');
+      setTimeout(() => setFeedbackMsg(null), 4000);
+    } catch (err) {
+      console.error('Failed to seed batches:', err);
+    }
+  };
 
   // Poll live stream telemetry when session is active
   useEffect(() => {
