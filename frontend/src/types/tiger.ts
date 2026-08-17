@@ -117,7 +117,7 @@ export interface AlertItem {
 }
 
 export interface CameraProcessingBatch {
-  cameraCode: string;
+  cameraCode?: string;
   batchId: string;
   uploadedAt: string;
   uploadedBy: string;
