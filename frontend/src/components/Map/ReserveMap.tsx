@@ -137,12 +137,29 @@ const createTigerDetectionIcon = (tigerId: string, isSelected: boolean) => {
   });
 };
 
-// Controller to smoothly animate map viewport on target change
-const MapViewController: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
+// Controller to smoothly animate map viewport ONLY on target filter change (prevents zooming out during manual navigation)
+const MapViewController: React.FC<{
+  selectedZone: string;
+  selectedTigerId: string;
+  activeCenter: [number, number];
+  activeZoom: number;
+}> = ({ selectedZone, selectedTigerId, activeCenter, activeZoom }) => {
   const map = useMap();
+  const prevFilterRef = useRef<string>('');
+  const isFirstMountRef = useRef<boolean>(true);
+
   useEffect(() => {
-    map.setView(center, zoom, { animate: true, duration: 0.8 });
-  }, [center, zoom, map]);
+    const filterKey = `${selectedZone}__${selectedTigerId}`;
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      prevFilterRef.current = filterKey;
+      map.setView(activeCenter, activeZoom, { animate: false });
+    } else if (prevFilterRef.current !== filterKey) {
+      prevFilterRef.current = filterKey;
+      map.flyTo(activeCenter, activeZoom, { duration: 0.8 });
+    }
+  }, [selectedZone, selectedTigerId, activeCenter[0], activeCenter[1], activeZoom, map]);
+
   return null;
 };
 
@@ -166,7 +183,7 @@ export interface ReserveMapProps {
   className?: string;
 }
 
-export const ReserveMap: React.FC<ReserveMapProps> = ({
+const ReserveMapInner: React.FC<ReserveMapProps> = ({
   tigers,
   cameras,
   selectedZone = 'ALL',
@@ -209,17 +226,28 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
 
   if (selectedTigerId && selectedTigerId !== 'ALL') {
     const target = tigers.find(t => t.id === selectedTigerId);
-    if (target && target.homeRange.coreCenter) {
-      activeCenter = [target.homeRange.coreCenter.lat, target.homeRange.coreCenter.lng];
-      activeZoom = 12;
+    if (target && target.homeRange && target.homeRange.coreCenter) {
+      const cLat = target.homeRange.coreCenter.lat ?? (target.homeRange.coreCenter as any).latitude;
+      const cLng = target.homeRange.coreCenter.lng ?? (target.homeRange.coreCenter as any).longitude;
+      if (cLat != null && cLng != null && !isNaN(Number(cLat)) && !isNaN(Number(cLng))) {
+        activeCenter = [Number(cLat), Number(cLng)];
+        activeZoom = 12;
+      }
     }
   } else if (selectedZone && selectedZone !== 'ALL') {
     const zoneCameras = cameras.filter(c => c.zone === selectedZone);
-    if (zoneCameras.length > 0) {
-      const avgLat = zoneCameras.reduce((sum, c) => sum + c.lat, 0) / zoneCameras.length;
-      const avgLng = zoneCameras.reduce((sum, c) => sum + c.lng, 0) / zoneCameras.length;
-      activeCenter = [avgLat, avgLng];
-      activeZoom = 12;
+    const validCameras = zoneCameras.filter(c => {
+      const lat = c.lat ?? (c as any).latitude;
+      const lng = c.lng ?? (c as any).longitude;
+      return lat != null && lng != null && !isNaN(Number(lat)) && !isNaN(Number(lng));
+    });
+    if (validCameras.length > 0) {
+      const avgLat = validCameras.reduce((sum, c) => sum + Number(c.lat ?? (c as any).latitude), 0) / validCameras.length;
+      const avgLng = validCameras.reduce((sum, c) => sum + Number(c.lng ?? (c as any).longitude), 0) / validCameras.length;
+      if (!isNaN(avgLat) && !isNaN(avgLng)) {
+        activeCenter = [avgLat, avgLng];
+        activeZoom = 12;
+      }
     }
   }
 
@@ -366,7 +394,12 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
         style={{ height: '100%', width: '100%', borderRadius: '6px' }}
       >
         <ZoomControl position="bottomright" />
-        <MapViewController center={activeCenter} zoom={activeZoom} />
+        <MapViewController
+          selectedZone={selectedZone}
+          selectedTigerId={selectedTigerId}
+          activeCenter={activeCenter}
+          activeZoom={activeZoom}
+        />
 
         {/* Dynamic Basemap Rendering */}
         {basemap === 'google-satellite' && (
@@ -543,14 +576,19 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
 
         {/* Home Range Territory Polygons */}
         {showPolygons && tigers.map((tiger, idx) => {
-          if (!tiger.homeRange?.polygonCoordinates || tiger.homeRange.polygonCoordinates.length === 0) return null;
+          if (!tiger.homeRange?.polygonCoordinates || tiger.homeRange.polygonCoordinates.length < 3) return null;
+          const validCoords = tiger.homeRange.polygonCoordinates.filter(
+            c => Array.isArray(c) && c.length >= 2 && c[0] != null && !isNaN(Number(c[0])) && c[1] != null && !isNaN(Number(c[1]))
+          );
+          if (validCoords.length < 3) return null;
+
           const color = polygonPalette[idx % polygonPalette.length];
           const isSelected = selectedTigerId === tiger.id;
 
           return (
             <Polygon
               key={`poly-${tiger.id}`}
-              positions={tiger.homeRange.polygonCoordinates}
+              positions={validCoords}
               pathOptions={{
                 color: isSelected ? '#F59E0B' : color,
                 fillColor: isSelected ? '#F59E0B' : color,
@@ -593,7 +631,16 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           const detections = tiger.detections || [];
           if (detections.length < 2) return null;
           const isSelected = selectedTigerId === tiger.id;
-          const pathCoords: [number, number][] = detections.map(d => [d.location.lat, d.location.lng]);
+          const pathCoords: [number, number][] = detections
+            .map(d => {
+              const lat = d.location?.lat ?? (d as any).latitude;
+              const lng = d.location?.lng ?? (d as any).longitude;
+              if (lat == null || lng == null || isNaN(Number(lat)) || isNaN(Number(lng))) return null;
+              return [Number(lat), Number(lng)] as [number, number];
+            })
+            .filter((coord): coord is [number, number] => coord !== null);
+
+          if (pathCoords.length < 2) return null;
 
           return (
             <Polyline
@@ -609,16 +656,18 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           );
         })}
 
-        {/* Tiger Detection Locations */}
-        {tigers.map((tiger) =>
+        {/* Tiger Detection Locations (Focused when an individual tiger is selected) */}
+        {selectedTigerId !== 'ALL' && tigers.filter(t => t.id === selectedTigerId).map((tiger) =>
           (tiger.detections || []).map((detection) => {
-            const isSelected = selectedTigerId === tiger.id;
+            const lat = detection.location?.lat ?? (detection as any).latitude;
+            const lng = detection.location?.lng ?? (detection as any).longitude;
+            if (lat == null || lng == null || isNaN(Number(lat)) || isNaN(Number(lng))) return null;
 
             return (
               <Marker
-                key={detection.id}
-                position={[detection.location.lat, detection.location.lng]}
-                icon={createTigerDetectionIcon(tiger.id, isSelected)}
+                key={`det-${detection.id}`}
+                position={[Number(lat), Number(lng)]}
+                icon={createTigerDetectionIcon(tiger.id, true)}
               >
                 <Popup>
                   <div className="tt-map-popup">
@@ -658,79 +707,85 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           })
         )}
 
-        {/* Camera Trap Station Markers */}
-        {showCameras && cameras.map((camera) => (
-          <Marker
-            key={camera.id}
-            position={[camera.lat, camera.lng]}
-            icon={createCameraIcon(camera)}
-          >
-            <Popup>
-              <div className="tt-map-popup">
-                <div className="popup-header-row">
-                  <span className={`popup-station-badge ${camera.isEdgeCamera ? 'edge-station-badge' : ''}`}>
-                    {camera.isEdgeCamera ? 'PERIMETER EDGE' : 'STATION'} {camera.code}
-                  </span>
-                  <span className={`popup-status-badge ${camera.hasActiveAlert ? 'alert-active' : camera.status.toLowerCase()}`}>
-                    {camera.hasActiveAlert ? '🚨 TIGER ALERT' : camera.status}
-                  </span>
-                </div>
-                <div className="popup-station-name">{camera.name}</div>
-                <div className="popup-body">
-                  {camera.isEdgeCamera && camera.nearbyVillage && (
-                    <div className="popup-village-proximity-strip" style={{
-                      background: camera.hasActiveAlert ? 'rgba(239, 68, 68, 0.15)' : 'rgba(2, 132, 199, 0.12)',
-                      border: camera.hasActiveAlert ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(2, 132, 199, 0.3)',
-                      padding: '5px 8px',
-                      borderRadius: '4px',
-                      marginBottom: '8px',
-                      fontSize: '11px',
-                      color: camera.hasActiveAlert ? '#FCA5A5' : '#7DD3FC'
-                    }}>
-                      <strong>🏡 Adjacent Settlement:</strong> {camera.nearbyVillage} (~{camera.distanceToVillageMeters || 350}m from boundary)
-                    </div>
-                  )}
-                  <div className="popup-stat-row">
-                    <span className="lbl">Forest Range:</span>
-                    <span className="val">{camera.zone} Sector</span>
-                  </div>
-                  <div className="popup-stat-row">
-                    <span className="lbl">Tigers Observed:</span>
-                    <span className="val">{camera.tigersObservedCount} unique individuals</span>
-                  </div>
-                  <div className="popup-stat-row">
-                    <span className="lbl">Total Captures:</span>
-                    <span className="val">{camera.totalCapturesRecorded} frames</span>
-                  </div>
-                  <div className="popup-stat-row">
-                    <span className="lbl">Last Service:</span>
-                    <span className="val">{camera.lastServiceDate}</span>
-                  </div>
+        {/* Camera Trap Station Markers (Deduplicated by Station Code/ID) */}
+        {showCameras && Array.from(new Map((cameras || []).map(c => [c.code || c.id, c])).values()).map((camera) => {
+          const lat = camera.lat ?? (camera as any).latitude;
+          const lng = camera.lng ?? (camera as any).longitude;
+          if (lat == null || lng == null || isNaN(Number(lat)) || isNaN(Number(lng))) return null;
 
-                  {camera.isEdgeCamera && (
-                    <a
-                      href="/live-feeds"
-                      className="tt-btn tt-btn-primary btn-sm"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        marginTop: '10px',
-                        padding: '6px 10px',
-                        textDecoration: 'none',
+          return (
+            <Marker
+              key={`cam-station-${camera.id || camera.code}`}
+              position={[Number(lat), Number(lng)]}
+              icon={createCameraIcon(camera)}
+            >
+              <Popup>
+                <div className="tt-map-popup">
+                  <div className="popup-header-row">
+                    <span className={`popup-station-badge ${camera.isEdgeCamera ? 'edge-station-badge' : ''}`}>
+                      {camera.isEdgeCamera ? 'PERIMETER EDGE' : 'STATION'} {camera.code}
+                    </span>
+                    <span className={`popup-status-badge ${camera.hasActiveAlert ? 'alert-active' : camera.status.toLowerCase()}`}>
+                      {camera.hasActiveAlert ? '🚨 TIGER ALERT' : camera.status}
+                    </span>
+                  </div>
+                  <div className="popup-station-name">{camera.name}</div>
+                  <div className="popup-body">
+                    {camera.isEdgeCamera && camera.nearbyVillage && (
+                      <div className="popup-village-proximity-strip" style={{
+                        background: camera.hasActiveAlert ? 'rgba(239, 68, 68, 0.15)' : 'rgba(2, 132, 199, 0.12)',
+                        border: camera.hasActiveAlert ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(2, 132, 199, 0.3)',
+                        padding: '5px 8px',
+                        borderRadius: '4px',
+                        marginBottom: '8px',
                         fontSize: '11px',
-                        fontWeight: 600
-                      }}
-                    >
-                      <span>📹 Open Live 5-Camera Feed</span>
-                    </a>
-                  )}
+                        color: camera.hasActiveAlert ? '#FCA5A5' : '#7DD3FC'
+                      }}>
+                        <strong>🏡 Adjacent Settlement:</strong> {camera.nearbyVillage} (~{camera.distanceToVillageMeters || 350}m from boundary)
+                      </div>
+                    )}
+                    <div className="popup-stat-row">
+                      <span className="lbl">Forest Range:</span>
+                      <span className="val">{camera.zone} Sector</span>
+                    </div>
+                    <div className="popup-stat-row">
+                      <span className="lbl">Tigers Observed:</span>
+                      <span className="val">{camera.tigersObservedCount} unique individuals</span>
+                    </div>
+                    <div className="popup-stat-row">
+                      <span className="lbl">Total Captures:</span>
+                      <span className="val">{camera.totalCapturesRecorded} frames</span>
+                    </div>
+                    <div className="popup-stat-row">
+                      <span className="lbl">Last Service:</span>
+                      <span className="val">{camera.lastServiceDate}</span>
+                    </div>
+
+                    {camera.isEdgeCamera && (
+                      <a
+                        href="/live-feeds"
+                        className="tt-btn tt-btn-primary btn-sm"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          marginTop: '10px',
+                          padding: '6px 10px',
+                          textDecoration: 'none',
+                          fontSize: '11px',
+                          fontWeight: 600
+                        }}
+                      >
+                        <span>📹 Open Live 5-Camera Feed</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
 
       <style>{`
@@ -1135,4 +1190,69 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
     </div>
   );
 };
+
+// Safe Error Boundary to prevent any map crashes from breaking the UI
+class MapErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any) {
+    console.warn('Map boundary caught rendering exception:', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          height: '100%',
+          minHeight: '380px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#0F172A',
+          color: '#94A3B8',
+          borderRadius: '8px',
+          padding: '20px',
+          textAlign: 'center'
+        }}>
+          <span style={{ fontSize: '24px', marginBottom: '8px' }}>🗺️</span>
+          <strong style={{ color: '#F8FAFC', marginBottom: '4px' }}>GIS Map Viewport Active</strong>
+          <span style={{ fontSize: '12px' }}>Connecting to Pench Tiger Reserve spatial coordinate layer...</span>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            style={{
+              marginTop: '12px',
+              padding: '6px 14px',
+              background: '#166534',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 600
+            }}
+          >
+            Refresh Spatial Layers
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export const ReserveMap: React.FC<ReserveMapProps> = (props) => (
+  <MapErrorBoundary>
+    <ReserveMapInner {...props} />
+  </MapErrorBoundary>
+);
+
+export const SafeReserveMap = ReserveMap;
 export default ReserveMap;

@@ -96,28 +96,51 @@ class ReIDFeatureExtractor:
 
         self._initialize_extractor()
 
+    def _find_weights_path(self) -> Optional[Path]:
+        """Search for MegaDescriptor weights in models directory under various common names."""
+        possible_paths = [
+            self.weights_path,
+            settings.MODELS_DIR / "maga descriptor_t_224.pt",
+            settings.MODELS_DIR / "maga_descriptor_t_224.pt",
+            settings.MODELS_DIR / "mega descriptor_t_224.pt",
+            settings.MODELS_DIR / "mega_descriptor_t_224.pt",
+            settings.MODELS_DIR / "megadescriptor_t_224.pt",
+            settings.BASE_DIR / "maga descriptor_t_224.pt",
+            settings.BASE_DIR / "megadescriptor_t_224.pt",
+        ]
+        for p in possible_paths:
+            if p is not None and p.exists() and p.is_file():
+                return p
+        return None
+
     def _initialize_extractor(self) -> None:
         """Initialize the model and load custom checkpoint if present."""
         try:
-            has_local_weights = self.weights_path.exists()
+            resolved_weights = self._find_weights_path()
+            has_local_weights = resolved_weights is not None
             self.model = MegaDescriptorReID(
                 backbone_name="convnext_tiny",
                 embedding_dim=self.embedding_dim,
                 pretrained=not has_local_weights,
             )
 
-            if has_local_weights:
-                logger.info(f"Loading MegaDescriptor weights from {self.weights_path}")
-                checkpoint = torch.load(self.weights_path, map_location="cpu")
-                state_dict = checkpoint.get("state_dict", checkpoint)
-                self.model.load_state_dict(state_dict, strict=False)
+            if has_local_weights and resolved_weights:
+                try:
+                    logger.info(f"Loading MegaDescriptor weights from {resolved_weights}")
+                    checkpoint = torch.load(resolved_weights, map_location="cpu")
+                    state_dict = checkpoint.get("state_dict", checkpoint)
+                    self.model.load_state_dict(state_dict, strict=False)
+                except Exception as load_err:
+                    logger.warning(f"Could not load custom weights from {resolved_weights} ({load_err}). Using ConvNeXt backbone.")
+            else:
+                logger.info("MegaDescriptor weights file not found on disk. Initialized with pretrained ConvNeXt backbone.")
 
             self.model.eval()
             if self.device == "cuda" and torch.cuda.is_available():
                 self.model.to("cuda")
 
         except Exception as err:
-            logger.error(f"Failed to initialize Re-ID network: {err}")
+            logger.warning(f"Re-ID network fallback: {err}")
             raise
 
     def clear_vram(self) -> None:

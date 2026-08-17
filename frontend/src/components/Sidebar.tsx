@@ -168,13 +168,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Reserve Jurisdiction Sub-header */}
-        <div className="reserve-tag-strip">
-          <div className="reserve-indicator">
-            <Trees size={13} className="trees-icon" />
-            <span>Forest Department System</span>
+        {!isCollapsed && (
+          <div className="reserve-tag-strip">
+            <div className="reserve-indicator">
+              <Trees size={13} className="trees-icon" />
+              <span>Forest Department System</span>
+            </div>
+            <span className="prototype-pill" style={{ background: '#15803D', color: '#DCFCE7' }}>ACTIVE</span>
           </div>
-          <span className="prototype-pill" style={{ background: '#15803D', color: '#DCFCE7' }}>ACTIVE</span>
-        </div>
+        )}
 
         {/* Navigation List */}
         <nav className="sidebar-nav">
@@ -258,26 +260,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="version-tag">v2.1</span>
             </div>
           ) : (
-            <div className="telemetry-details">
-              <div className="detail-row">
-                <span className="detail-label">Data Mode:</span>
-                <span className="detail-val">Live Field Ingestion</span>
+            <>
+              <div className="telemetry-details">
+                <div className="detail-row">
+                  <span className="detail-label">Data Mode:</span>
+                  <span className="detail-val">Live Field Ingestion</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Primary Input:</span>
+                  <span className="detail-val">Camera-trap imagery</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Camera Array:</span>
+                  <span className="detail-val">24 Active Stations</span>
+                </div>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Primary Input:</span>
-                <span className="detail-val">Camera-trap imagery</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Camera Array:</span>
-                <span className="detail-val">24 Active Stations</span>
-              </div>
-            </div>
-          )}
 
-          <div className="footer-copyright">
-            <span>Pench Tiger Reserve</span>
-            <span className="version-tag">v2.1</span>
-          </div>
+              <div className="footer-copyright">
+                <span>Pench Tiger Reserve</span>
+                <span className="version-tag">v2.1</span>
+              </div>
+            </>
+          )}
         </div>
       </aside>
 
@@ -302,6 +306,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           bottom: 0;
           left: 0;
           z-index: 100;
+          overflow-x: hidden;
           transition: width var(--transition-normal), transform var(--transition-normal);
           border-right: 1px solid rgba(255, 255, 255, 0.05);
           box-shadow: 4px 0 25px rgba(0, 0, 0, 0.4);
@@ -310,6 +315,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         .tt-sidebar.collapsed {
           width: var(--sidebar-collapsed-width);
+          min-width: var(--sidebar-collapsed-width);
+          max-width: var(--sidebar-collapsed-width);
+          overflow-x: hidden;
+        }
+
+        .tt-sidebar.collapsed .reserve-tag-strip,
+        .tt-sidebar.collapsed .footer-copyright,
+        .tt-sidebar.collapsed .brand-text,
+        .tt-sidebar.collapsed .header-actions {
+          display: none !important;
         }
 
         .sidebar-header {

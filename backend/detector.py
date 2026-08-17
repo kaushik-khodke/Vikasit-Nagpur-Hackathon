@@ -48,28 +48,36 @@ class MegaDetectorV6:
 
         self._initialize_model()
 
+    def _find_detector_weights(self) -> Optional[Path]:
+        """Search for YOLO detector weights in models directory."""
+        candidates = [
+            self.weights_path,
+            settings.MODELS_DIR / "yolov8n.pt",
+            settings.MODELS_DIR / "md_v6a_yolov10e.pt",
+            settings.BASE_DIR / "yolov8n.pt",
+            Path("yolov8n.pt"),
+        ]
+        for p in candidates:
+            if p is not None and p.exists() and p.is_file():
+                return p
+        return None
+
     def _initialize_model(self) -> None:
-        """Load MegaDetector weights into memory with FP16 precision."""
+        """Load YOLO / MegaDetector weights into memory with FP16 precision."""
         try:
             from ultralytics import YOLO
 
-            if self.weights_path.exists():
-                logger.info(f"Loading MegaDetector v6 from {self.weights_path} onto {self.device}")
-                self.model = YOLO(str(self.weights_path))
+            resolved_path = self._find_detector_weights()
+            if resolved_path is not None:
+                logger.info(f"Loading YOLO detector from {resolved_path} onto {self.device}")
+                self.model = YOLO(str(resolved_path))
                 if self.device == "cuda" and torch.cuda.is_available():
                     self.model.to("cuda")
                 self.is_mock = False
             else:
-                logger.warning(
-                    f"MegaDetector weights not found at {self.weights_path}. Initializing lightweight YOLOv8/v10 fallback."
-                )
-                # Attempt to initialize a standard YOLOv8n or lightweight backbone
+                logger.info("Initializing Ultralytics YOLOv8n backbone.")
                 try:
-                    local_yolo = settings.MODELS_DIR / "yolov8n.pt"
-                    if local_yolo.exists():
-                        self.model = YOLO(str(local_yolo))
-                    else:
-                        self.model = YOLO("yolov8n.pt")
+                    self.model = YOLO("yolov8n.pt")
                     if self.device == "cuda" and torch.cuda.is_available():
                         self.model.to("cuda")
                     self.is_mock = False
