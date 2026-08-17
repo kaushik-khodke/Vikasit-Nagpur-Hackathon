@@ -954,6 +954,7 @@ export const CameraProcessing: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          animation: fadeInUp 0.4s ease-out;
         }
 
         .processing-tabs-bar {
@@ -1019,13 +1020,13 @@ export const CameraProcessing: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: #DCFCE7;
-          border: 1px solid #BBF7D0;
-          color: #166534;
+          background: rgba(16, 185, 129, 0.1);
+          border: 1px solid rgba(16, 185, 129, 0.2);
+          color: #34D399;
           padding: 10px 14px;
           border-radius: var(--radius-sm);
           font-size: 12px;
-          font-weight: 500;
+          font-weight: 600;
         }
 
         /* Live Streaming Console */
@@ -1134,6 +1135,7 @@ export const CameraProcessing: React.FC = () => {
           justify-content: space-between;
           align-items: center;
           pointer-events: none;
+          z-index: 10;
         }
 
         .hud-badge {
@@ -1156,6 +1158,7 @@ export const CameraProcessing: React.FC = () => {
           font-size: 10.5px;
           color: #22C55E;
           font-weight: 700;
+          border: 1px solid rgba(255,255,255,0.08);
         }
 
         .stream-telemetry-panel {
@@ -1230,6 +1233,7 @@ export const CameraProcessing: React.FC = () => {
         .individuals-label {
           font-size: 11px;
           color: #94A3B8;
+          text-transform: uppercase;
         }
 
         .individuals-tag-list {
@@ -1260,6 +1264,14 @@ export const CameraProcessing: React.FC = () => {
           color: #DCFCE7;
         }
 
+        .stream-complete-alert code {
+          background: rgba(0,0,0,0.2);
+          padding: 1px 4px;
+          border-radius: 3px;
+          color: #34D399;
+        }
+
+        /* Metrics grid */
         /* Metrics Summary Grid */
         .metrics-summary-grid {
           display: grid;
@@ -1284,12 +1296,14 @@ export const CameraProcessing: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 4px;
+          padding: 14px;
         }
 
         .m-label {
           font-size: 11px;
           color: var(--text-muted);
-          font-weight: 500;
+          font-weight: 600;
+          text-transform: uppercase;
         }
 
         .m-val {
@@ -1301,6 +1315,9 @@ export const CameraProcessing: React.FC = () => {
         .m-sub {
           font-size: 10.5px;
           color: var(--text-muted);
+          border-top: 1px solid rgba(255, 255, 255, 0.03);
+          padding-top: 4px;
+          margin-top: 2px;
         }
 
         /* Upload & Policy Grid */
@@ -1324,7 +1341,7 @@ export const CameraProcessing: React.FC = () => {
         }
 
         .dropzone-box {
-          border: 2px dashed var(--border-default);
+          border: 2px dashed rgba(255, 255, 255, 0.15);
           border-radius: var(--radius-sm);
           padding: 24px;
           display: flex;
@@ -1340,6 +1357,23 @@ export const CameraProcessing: React.FC = () => {
 
         .dropzone-box:hover, .dropzone-box.drag-over {
           border-color: var(--color-primary);
+          background: rgba(16, 185, 129, 0.04);
+          box-shadow: 0 0 15px rgba(16, 185, 129, 0.08);
+        }
+
+        .dropzone-icon {
+          color: var(--color-primary-light);
+          transition: transform 0.2s;
+        }
+
+        .dropzone-box:hover .dropzone-icon {
+          transform: translateY(-2px);
+        }
+
+        .dropzone-main-text {
+          font-weight: 600;
+          font-size: 13.5px;
+          color: #FFFFFF;
           background: var(--color-primary-bg);
         }
 
@@ -1356,6 +1390,7 @@ export const CameraProcessing: React.FC = () => {
           font-size: 11px;
           color: var(--text-muted);
           max-width: 420px;
+          line-height: 1.45;
         }
 
         .btn-upload-trigger {
@@ -1366,6 +1401,9 @@ export const CameraProcessing: React.FC = () => {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 12px;
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .option-field {
@@ -1377,6 +1415,8 @@ export const CameraProcessing: React.FC = () => {
         .field-label {
           font-size: 11px;
           font-weight: 600;
+          color: var(--text-muted);
+          text-transform: uppercase;
           color: var(--text-secondary);
         }
 
@@ -1397,6 +1437,23 @@ export const CameraProcessing: React.FC = () => {
         .policy-item {
           display: flex;
           gap: 10px;
+          padding: 10px 12px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          border-radius: var(--radius-sm);
+          font-size: 11.5px;
+        }
+
+        .policy-item strong {
+          display: block;
+          color: #FFFFFF;
+          margin-bottom: 2px;
+        }
+
+        .policy-item p {
+          color: var(--text-secondary);
+          line-height: 1.45;
+          margin: 0;
           align-items: flex-start;
           font-size: 11.5px;
           color: var(--text-secondary);
@@ -1429,6 +1486,9 @@ export const CameraProcessing: React.FC = () => {
 
         .batches-table-wrapper {
           overflow-x: auto;
+          background: rgba(0, 0, 0, 0.15);
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.03);
         }
 
         .num-col {
@@ -1437,6 +1497,7 @@ export const CameraProcessing: React.FC = () => {
 
         .batch-id-cell {
           font-weight: 600;
+          color: #FFFFFF;
         }
 
         .uploaded-by-cell {
@@ -1444,11 +1505,13 @@ export const CameraProcessing: React.FC = () => {
         }
 
         .tiger-count-badge {
-          background: #FEF3C7;
-          color: #92400E;
-          padding: 2px 6px;
-          border-radius: 3px;
+          background: rgba(245, 158, 11, 0.12);
+          border: 1px solid rgba(245, 158, 11, 0.25);
+          color: #FBBF24;
+          padding: 2px 7px;
+          border-radius: 4px;
           font-size: 11px;
+          font-weight: 600;
         }
 
         .progress-cell {
@@ -1458,14 +1521,33 @@ export const CameraProcessing: React.FC = () => {
         .mini-progress-bar {
           width: 100%;
           height: 6px;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.08);
           border-radius: 3px;
           overflow: hidden;
         }
 
         .mini-progress-fill {
           height: 100%;
-          background: var(--color-forest);
+          background: linear-gradient(90deg, #10B981, #34D399);
+          box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
+        }
+
+        .filter-pill-group .filter-pill {
+          background: transparent;
+          border: none;
+          font-size: 11px;
+          padding: 4px 10px;
+          border-radius: var(--radius-sm);
+          color: var(--text-secondary);
+          cursor: pointer;
+          font-weight: 500;
+        }
+
+        .filter-pill-group .filter-pill.active {
+          background: rgba(255,255,255,0.06);
+          color: #FFFFFF;
+          font-weight: 600;
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
         }
 
         /* Dedicated Quarantine Console Styles */

@@ -266,6 +266,7 @@ export const MovementMap: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 14px;
+          animation: fadeInUp 0.4s ease-out;
         }
 
         .banner-left {
@@ -278,9 +279,11 @@ export const MovementMap: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 12px 16px;
+          padding: 12px 18px;
           gap: 12px;
           flex-wrap: wrap;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--glass-border);
         }
 
         .bar-left {
@@ -298,7 +301,8 @@ export const MovementMap: React.FC = () => {
         .control-label {
           font-size: 11.5px;
           color: var(--text-muted);
-          font-weight: 500;
+          font-weight: 600;
+          text-transform: uppercase;
         }
 
         .layer-toggles {
@@ -311,21 +315,28 @@ export const MovementMap: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 6px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           color: var(--text-secondary);
-          padding: 5px 10px;
+          padding: 6px 12px;
           border-radius: var(--radius-sm);
           font-size: 11.5px;
-          font-weight: 500;
+          font-weight: 600;
           transition: all var(--transition-fast);
         }
 
+        .layer-toggle-btn:hover {
+          color: #FFFFFF;
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+
         .layer-toggle-btn.active {
-          background: var(--color-primary-bg);
-          border-color: var(--border-active);
-          color: var(--color-primary);
-          font-weight: 600;
+          background: rgba(16, 185, 129, 0.12);
+          border-color: rgba(16, 185, 129, 0.3);
+          color: #34D399;
+          font-weight: 700;
+          box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
         }
 
         .map-layout-grid {
@@ -343,6 +354,11 @@ export const MovementMap: React.FC = () => {
         .map-container-card {
           height: calc(100vh - 230px);
           min-height: 520px;
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          border: 1px solid var(--glass-border);
+          box-shadow: var(--shadow-sm);
         }
 
         .map-side-panel {
@@ -356,7 +372,11 @@ export const MovementMap: React.FC = () => {
           flex-direction: column;
           gap: 10px;
           padding: 14px;
-          border-left: 3px solid #B45309;
+          border-left: 3px solid #FBBF24;
+          background: rgba(255, 255, 255, 0.02);
+          border-top: 1px solid var(--glass-border);
+          border-right: 1px solid var(--glass-border);
+          border-bottom: 1px solid var(--glass-border);
         }
 
         .summary-header {
@@ -368,7 +388,7 @@ export const MovementMap: React.FC = () => {
         .active-tiger-title {
           font-size: 13px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
           margin-top: 4px;
         }
 
@@ -376,10 +396,11 @@ export const MovementMap: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 4px;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.02);
           padding: 8px 10px;
           border-radius: var(--radius-sm);
           font-size: 11.5px;
+          border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .s-metric {
@@ -393,7 +414,7 @@ export const MovementMap: React.FC = () => {
 
         .s-val {
           font-weight: 600;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .reset-focus-btn {
@@ -413,26 +434,28 @@ export const MovementMap: React.FC = () => {
           align-items: center;
           gap: 10px;
           padding: 8px 10px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: var(--radius-sm);
           cursor: pointer;
           transition: all var(--transition-fast);
         }
 
         .territory-item:hover {
-          border-color: var(--border-active);
+          border-color: rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.04);
         }
 
         .territory-item.selected {
-          border-color: #B45309;
-          background: #FEF3C7;
+          border-color: rgba(16, 185, 129, 0.3);
+          background: rgba(16, 185, 129, 0.08);
+          box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
         }
 
         .item-color-indicator {
           width: 8px;
           height: 32px;
-          border-radius: 2px;
+          border-radius: 3px;
           flex-shrink: 0;
         }
 
@@ -453,7 +476,7 @@ export const MovementMap: React.FC = () => {
           font-family: var(--font-mono);
           font-size: 11.5px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .item-zone-txt {
@@ -468,14 +491,22 @@ export const MovementMap: React.FC = () => {
           color: var(--text-secondary);
         }
 
+        .item-meta-line strong {
+          color: #FFFFFF;
+        }
+
         .overlap-desc {
           font-size: 11.5px;
           color: var(--text-secondary);
           line-height: 1.45;
         }
 
+        .overlap-desc strong {
+          color: #FFFFFF;
+        }
+
         .text-forest {
-          color: var(--color-primary);
+          color: var(--color-primary-light);
         }
       `}</style>
     </div>

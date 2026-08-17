@@ -163,6 +163,7 @@ export const Tigers: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 14px;
+          animation: fadeInUp 0.4s ease-out;
         }
 
         .banner-left {
@@ -172,12 +173,14 @@ export const Tigers: React.FC = () => {
         }
 
         .filters-card {
-          padding: 12px 16px;
+          padding: 12px 18px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
           flex-wrap: wrap;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--glass-border);
         }
 
         .search-box {
@@ -186,10 +189,16 @@ export const Tigers: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: var(--radius-sm);
-          padding: 6px 10px;
+          padding: 6px 12px;
+          transition: all var(--transition-fast);
+        }
+
+        .search-box:focus-within {
+          border-color: var(--border-focus);
+          box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
         }
 
         .search-input {
@@ -211,45 +220,51 @@ export const Tigers: React.FC = () => {
         .filter-group {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
         }
 
         .filter-label {
           font-size: 11.5px;
           color: var(--text-muted);
-          font-weight: 500;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
         }
 
         .filter-chips {
           display: flex;
           gap: 4px;
+          background: rgba(255, 255, 255, 0.03);
+          padding: 2px;
+          border-radius: var(--radius-sm);
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .filter-chip {
-          padding: 3px 8px;
+          padding: 4px 10px;
           border-radius: var(--radius-sm);
           font-size: 11px;
           color: var(--text-secondary);
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: transparent;
+          border: none;
           transition: all var(--transition-fast);
         }
 
         .filter-chip.active {
-          background: var(--color-primary-bg);
-          color: var(--color-primary);
+          background: rgba(16, 185, 129, 0.12);
+          color: #34D399;
           font-weight: 600;
-          border-color: var(--border-active);
+          box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.25);
         }
 
         .filter-select {
-          min-width: 150px;
+          min-width: 160px;
         }
 
         .tigers-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 14px;
+          gap: 16px;
         }
 
         @media (max-width: 1100px) {
@@ -269,51 +284,74 @@ export const Tigers: React.FC = () => {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          background: var(--glass-bg);
+          border: 1px solid var(--glass-border);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tiger-card:hover {
+          transform: translateY(-3px);
+          border-color: rgba(16, 185, 129, 0.25);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(16, 185, 129, 0.1);
         }
 
         .card-image-wrap {
           position: relative;
-          height: 160px;
+          height: 170px;
           width: 100%;
-          background: #EEF2EF;
+          background: #090E17;
+          overflow: hidden;
         }
 
         .card-tiger-img {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          transition: transform 0.5s ease;
+        }
+
+        .tiger-card:hover .card-tiger-img {
+          transform: scale(1.04);
         }
 
         .card-top-badges {
           position: absolute;
-          top: 8px;
-          left: 8px;
-          right: 8px;
+          top: 10px;
+          left: 10px;
+          right: 10px;
           display: flex;
           justify-content: space-between;
+          z-index: 10;
+        }
+
+        .card-top-badges .badge-forest {
+          box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
         }
 
         .card-bottom-zone {
           position: absolute;
-          bottom: 8px;
-          left: 8px;
+          bottom: 10px;
+          left: 10px;
           display: flex;
           align-items: center;
           gap: 4px;
-          background: rgba(255, 255, 255, 0.9);
-          color: var(--text-primary);
+          background: rgba(11, 15, 25, 0.85);
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+          color: #34D399;
           font-size: 10.5px;
           font-weight: 600;
-          padding: 2px 6px;
+          padding: 3px 8px;
           border-radius: var(--radius-sm);
-          border: 1px solid rgba(0,0,0,0.1);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          z-index: 10;
         }
 
         .card-body {
-          padding: 14px;
+          padding: 16px;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 12px;
           flex: 1;
         }
 
@@ -324,19 +362,24 @@ export const Tigers: React.FC = () => {
         }
 
         .tiger-title {
-          font-size: 14px;
+          font-size: 15px;
           font-weight: 700;
+          color: #FFFFFF;
         }
 
         .stripe-sig-tag {
-          font-size: 10.5px;
-          color: var(--text-muted);
+          font-size: 11px;
+          color: var(--color-primary-light);
+          background: rgba(16, 185, 129, 0.1);
+          border: 1px solid rgba(16, 185, 129, 0.2);
+          padding: 1px 6px;
+          border-radius: 4px;
         }
 
         .tiger-notes {
           font-size: 11.5px;
           color: var(--text-secondary);
-          line-height: 1.4;
+          line-height: 1.45;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
@@ -347,35 +390,39 @@ export const Tigers: React.FC = () => {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 8px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: var(--radius-sm);
-          padding: 7px 10px;
+          padding: 8px 12px;
         }
 
         .metric-box {
           display: flex;
           flex-direction: column;
+          gap: 1px;
         }
 
         .metric-lbl {
-          font-size: 9.5px;
+          font-size: 9px;
           color: var(--text-muted);
           text-transform: uppercase;
+          letter-spacing: 0.03em;
         }
 
         .metric-val {
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--text-primary);
+          font-size: 12.5px;
+          font-weight: 700;
+          color: #FFFFFF;
         }
 
         .sighting-latest-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          font-size: 10.5px;
+          font-size: 11px;
           color: var(--text-muted);
+          border-top: 1px solid rgba(255, 255, 255, 0.04);
+          padding-top: 10px;
         }
 
         .latest-left {
@@ -387,7 +434,7 @@ export const Tigers: React.FC = () => {
         .view-dossier-btn {
           width: 100%;
           justify-content: space-between;
-          margin-top: auto;
+          margin-top: 4px;
         }
 
         .empty-results {
@@ -395,11 +442,11 @@ export const Tigers: React.FC = () => {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          padding: 30px;
-          gap: 6px;
+          padding: 40px;
+          gap: 10px;
         }
 
-        .text-forest { color: var(--color-primary); }
+        .text-forest { color: var(--color-primary-light); }
         .font-mono { font-family: var(--font-mono); }
       `}</style>
     </div>

@@ -48,6 +48,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.env
 
 # -----------------------------------------------------------------------------
 # 3. Large Machine Learning Models & Checkpoints (> 5MB)

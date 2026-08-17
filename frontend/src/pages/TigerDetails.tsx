@@ -241,6 +241,7 @@ export const TigerDetails: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 14px;
+          animation: fadeInUp 0.4s ease-out;
         }
 
         .banner-left {
@@ -274,6 +275,8 @@ export const TigerDetails: React.FC = () => {
 
         .dossier-header-card {
           padding: 20px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--glass-border);
         }
 
         .dossier-profile-grid {
@@ -293,8 +296,9 @@ export const TigerDetails: React.FC = () => {
           height: 200px;
           border-radius: var(--radius-sm);
           overflow: hidden;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: #090E17;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: var(--shadow-sm);
         }
 
         .profile-img {
@@ -310,11 +314,12 @@ export const TigerDetails: React.FC = () => {
           font-family: var(--font-mono);
           font-size: 9.5px;
           font-weight: 700;
-          padding: 2px 7px;
+          padding: 3px 8px;
           border-radius: var(--radius-sm);
-          background: rgba(27, 94, 60, 0.9);
+          background: rgba(16, 185, 129, 0.85);
           color: #FFFFFF;
-          border: 1px solid #13462D;
+          border: 1px solid rgba(16, 185, 129, 0.3);
+          box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
         }
 
         .profile-main-info {
@@ -333,21 +338,21 @@ export const TigerDetails: React.FC = () => {
         .profile-title {
           font-size: 18px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .profile-notes {
           font-size: 12.5px;
           color: var(--text-secondary);
-          line-height: 1.45;
+          line-height: 1.5;
         }
 
         .profile-metrics-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 10px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: var(--radius-sm);
           padding: 10px 12px;
           margin-top: 4px;
@@ -366,15 +371,16 @@ export const TigerDetails: React.FC = () => {
         }
 
         .p-label {
-          font-size: 9.5px;
+          font-size: 9px;
           color: var(--text-muted);
           text-transform: uppercase;
+          letter-spacing: 0.03em;
         }
 
         .p-val {
           font-size: 12.5px;
-          font-weight: 600;
-          color: var(--text-primary);
+          font-weight: 700;
+          color: #FFFFFF;
         }
 
         .camera-stations-strip {
@@ -388,7 +394,8 @@ export const TigerDetails: React.FC = () => {
         .strip-lbl {
           font-size: 11px;
           color: var(--text-muted);
-          font-weight: 500;
+          font-weight: 600;
+          text-transform: uppercase;
         }
 
         .station-chips {
@@ -401,11 +408,11 @@ export const TigerDetails: React.FC = () => {
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          background: #E8F2EC;
-          border: 1px solid #C4DEC0;
-          color: var(--color-primary);
-          padding: 2px 7px;
-          border-radius: 3px;
+          background: rgba(16, 185, 129, 0.12);
+          border: 1px solid rgba(16, 185, 129, 0.2);
+          color: var(--color-primary-light);
+          padding: 3px 8px;
+          border-radius: 4px;
           font-size: 10.5px;
           font-weight: 600;
         }
@@ -423,32 +430,45 @@ export const TigerDetails: React.FC = () => {
         }
 
         .stripe-visual-box {
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: var(--radius-sm);
-          padding: 20px 14px;
+          padding: 24px 14px;
           display: flex;
           align-items: center;
           justify-content: center;
           margin-bottom: 12px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .stripe-visual-box::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.3), transparent);
         }
 
         .stripe-pattern-graphic {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 4px;
+          gap: 6px;
           text-align: center;
         }
 
         .stripe-signature-tag {
           font-size: 13px;
           font-weight: 700;
-          color: var(--color-primary);
-          background: #DCEDE2;
-          border: 1px solid #B8D8C4;
-          padding: 3px 10px;
-          border-radius: 4px;
+          color: #34D399;
+          background: rgba(16, 185, 129, 0.15);
+          border: 1px solid rgba(16, 185, 129, 0.25);
+          padding: 4px 12px;
+          border-radius: 6px;
+          box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
         }
 
         .stripe-sub-text {
@@ -468,7 +488,7 @@ export const TigerDetails: React.FC = () => {
           justify-content: space-between;
           font-size: 12px;
           padding-bottom: 6px;
-          border-bottom: 1px solid var(--border-subtle);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .spec-name {
@@ -476,8 +496,8 @@ export const TigerDetails: React.FC = () => {
         }
 
         .spec-val {
-          font-weight: 500;
-          color: var(--text-primary);
+          font-weight: 600;
+          color: #FFFFFF;
         }
 
         .dossier-actions-row {
@@ -504,7 +524,7 @@ export const TigerDetails: React.FC = () => {
           flex-direction: column;
           align-items: center;
           width: 12px;
-          padding-top: 4px;
+          padding-top: 6px;
         }
 
         .timeline-dot {
@@ -512,31 +532,39 @@ export const TigerDetails: React.FC = () => {
           height: 8px;
           border-radius: 50%;
           background: var(--color-primary);
+          box-shadow: 0 0 8px var(--color-primary);
         }
 
         .timeline-line {
           width: 1.5px;
           flex: 1;
-          background: var(--border-default);
-          margin-top: 4px;
+          background: rgba(255, 255, 255, 0.06);
+          margin-top: 6px;
         }
 
         .timeline-content {
           flex: 1;
           display: flex;
           gap: 10px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: var(--radius-sm);
-          padding: 8px 10px;
+          padding: 10px;
+          transition: all 0.25s ease;
+        }
+
+        .timeline-content:hover {
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(255, 255, 255, 0.1);
         }
 
         .node-photo-box {
           width: 48px;
           height: 48px;
-          border-radius: 3px;
+          border-radius: 6px;
           overflow: hidden;
-          background: #E5E7EB;
+          background: #090E17;
+          border: 1px solid rgba(255, 255, 255, 0.06);
           flex-shrink: 0;
         }
 
@@ -562,7 +590,7 @@ export const TigerDetails: React.FC = () => {
         .node-station {
           font-size: 12px;
           font-weight: 600;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .node-time {
@@ -583,10 +611,10 @@ export const TigerDetails: React.FC = () => {
         }
 
         .related-sightings-box {
-          background: #FDFBF7;
-          border: 1px solid #F6E7D2;
+          background: rgba(251, 191, 36, 0.03);
+          border: 1px solid rgba(251, 191, 36, 0.15);
           border-radius: var(--radius-sm);
-          padding: 8px 10px;
+          padding: 10px;
           display: flex;
           flex-direction: column;
           gap: 6px;
@@ -598,8 +626,9 @@ export const TigerDetails: React.FC = () => {
           align-items: center;
           gap: 5px;
           font-size: 10.5px;
-          font-weight: 600;
-          color: #9A3412;
+          font-weight: 700;
+          color: #FBBF24;
+          text-transform: uppercase;
         }
 
         .related-item {
@@ -607,6 +636,7 @@ export const TigerDetails: React.FC = () => {
           align-items: center;
           justify-content: space-between;
           font-size: 11.5px;
+          color: var(--text-secondary);
         }
       `}</style>
     </div>

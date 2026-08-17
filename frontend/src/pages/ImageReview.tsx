@@ -479,6 +479,7 @@ export const ImageReview: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 14px;
+          animation: fadeInUp 0.4s ease-out;
         }
 
         .banner-left {
@@ -492,6 +493,8 @@ export const ImageReview: React.FC = () => {
           align-items: center;
           justify-content: space-between;
           padding: 12px 18px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--glass-border);
         }
 
         @media (max-width: 768px) {
@@ -509,8 +512,8 @@ export const ImageReview: React.FC = () => {
           font-family: var(--font-mono);
           font-size: 10px;
           font-weight: 700;
-          color: var(--color-primary);
-          letter-spacing: 0.04em;
+          color: var(--color-primary-light);
+          letter-spacing: 0.05em;
         }
 
         .queue-summary {
@@ -523,9 +526,10 @@ export const ImageReview: React.FC = () => {
         .filter-pill-group {
           display: flex;
           gap: 4px;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.03);
           padding: 2px;
           border-radius: var(--radius-sm);
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .filter-pill {
@@ -534,34 +538,35 @@ export const ImageReview: React.FC = () => {
           font-size: 11px;
           padding: 4px 10px;
           border-radius: var(--radius-sm);
-          color: var(--text-muted);
+          color: var(--text-secondary);
           cursor: pointer;
           font-weight: 500;
+          transition: all var(--transition-fast);
         }
 
         .filter-pill.active {
-          background: var(--bg-surface);
-          color: var(--text-primary);
+          background: rgba(255, 255, 255, 0.06);
+          color: #FFFFFF;
           font-weight: 600;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
         }
 
         .action-feedback-toast {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: #DCFCE7;
-          border: 1px solid #BBF7D0;
-          color: #166534;
+          background: rgba(16, 185, 129, 0.1);
+          border: 1px solid rgba(16, 185, 129, 0.2);
+          color: #34D399;
           padding: 8px 14px;
           border-radius: var(--radius-sm);
           font-size: 12px;
-          font-weight: 500;
+          font-weight: 600;
         }
 
         .review-layout-grid {
           display: grid;
-          grid-template-columns: 320px 1fr;
+          grid-template-columns: 330px 1fr;
           gap: 14px;
         }
 
@@ -577,11 +582,13 @@ export const ImageReview: React.FC = () => {
           padding: 0;
           overflow: hidden;
           max-height: 780px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--glass-border);
         }
 
         .stream-header {
           padding: 12px 14px;
-          border-bottom: 1px solid var(--border-default);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
           display: flex;
           flex-direction: column;
           gap: 8px;
@@ -591,10 +598,10 @@ export const ImageReview: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 6px;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.04);
           padding: 6px 10px;
           border-radius: var(--radius-sm);
-          border: 1px solid var(--border-default);
+          border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .search-input {
@@ -616,18 +623,18 @@ export const ImageReview: React.FC = () => {
           display: flex;
           gap: 10px;
           padding: 10px 12px;
-          border-bottom: 1px solid var(--border-subtle);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
           cursor: pointer;
           transition: background 0.15s;
         }
 
         .sighting-item:hover {
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.04);
         }
 
         .sighting-item.selected {
-          background: var(--bg-surface-subtle);
-          border-left: 3px solid var(--color-forest);
+          background: rgba(16, 185, 129, 0.06);
+          border-left: 3px solid var(--color-primary);
         }
 
         .item-thumb-box {
@@ -637,7 +644,8 @@ export const ImageReview: React.FC = () => {
           border-radius: var(--radius-sm);
           overflow: hidden;
           flex-shrink: 0;
-          background: #1E293B;
+          background: #090E17;
+          border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .item-thumb {
@@ -650,12 +658,13 @@ export const ImageReview: React.FC = () => {
           position: absolute;
           bottom: 2px;
           right: 2px;
-          background: rgba(0,0,0,0.75);
-          color: #FFF;
+          background: rgba(0,0,0,0.8);
+          color: #34D399;
           font-size: 8px;
           font-weight: 700;
           padding: 1px 4px;
           border-radius: 2px;
+          border: 1px solid rgba(255,255,255,0.08);
         }
 
         .item-info {
@@ -674,12 +683,12 @@ export const ImageReview: React.FC = () => {
         .item-candidate-id {
           font-weight: 700;
           font-size: 12.5px;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .match-pct {
           font-size: 11px;
-          color: var(--color-forest);
+          color: var(--color-primary-light);
           font-weight: 700;
         }
 
@@ -723,29 +732,31 @@ export const ImageReview: React.FC = () => {
         .detail-title {
           font-size: 16px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
           margin-top: 2px;
         }
 
         .flank-tag-pill {
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(16, 185, 129, 0.12);
+          border: 1px solid rgba(16, 185, 129, 0.2);
           padding: 4px 10px;
           border-radius: var(--radius-sm);
           font-size: 11px;
           font-weight: 700;
-          color: var(--color-forest);
+          color: #34D399;
+          box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15);
         }
 
         .ambiguous-warning-box {
           display: flex;
           gap: 10px;
-          background: #FEF3C7;
-          border: 1px solid #FDE68A;
-          color: #92400E;
+          background: rgba(245, 158, 11, 0.1);
+          border: 1px solid rgba(245, 158, 11, 0.2);
+          color: #FBBF24;
           padding: 10px 14px;
           border-radius: var(--radius-sm);
           font-size: 11.5px;
+          line-height: 1.45;
         }
 
         .ambiguous-warning-box strong {
@@ -755,11 +766,11 @@ export const ImageReview: React.FC = () => {
 
         .ambiguous-warning-box p {
           margin: 0;
-          line-height: 1.4;
+          color: var(--text-secondary);
         }
 
         .text-amber-icon {
-          color: #D97706;
+          color: #FBBF24;
           flex-shrink: 0;
           margin-top: 2px;
         }
@@ -777,14 +788,15 @@ export const ImageReview: React.FC = () => {
         }
 
         .candidate-card {
-          border: 1px solid var(--border-default);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: var(--radius-sm);
           padding: 10px 12px;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.02);
+          transition: all 0.25s ease;
         }
 
         .candidate-card.primary-candidate {
-          border-left: 3px solid var(--color-forest);
+          border-left: 3px solid var(--color-primary);
         }
 
         .candidate-card.secondary-candidate {
@@ -794,13 +806,13 @@ export const ImageReview: React.FC = () => {
         .cand-rank-badge {
           font-size: 9px;
           font-weight: 700;
-          color: var(--color-forest);
+          color: var(--color-primary-light);
           letter-spacing: 0.05em;
           margin-bottom: 4px;
         }
 
         .cand-rank-badge.sec {
-          color: #D97706;
+          color: #FBBF24;
         }
 
         .cand-main-row {
@@ -812,7 +824,7 @@ export const ImageReview: React.FC = () => {
         .cand-id {
           font-size: 14px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .cand-sex {
@@ -824,7 +836,7 @@ export const ImageReview: React.FC = () => {
         .cand-score {
           font-size: 13px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .cand-sub-meta {
@@ -864,10 +876,10 @@ export const ImageReview: React.FC = () => {
           position: relative;
           width: 100%;
           height: 240px;
-          background: #0F172A;
+          background: #060B13;
           border-radius: var(--radius-sm);
           overflow: hidden;
-          border: 1px solid var(--border-default);
+          border: 1px solid rgba(255, 255, 255, 0.08);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -883,11 +895,12 @@ export const ImageReview: React.FC = () => {
           position: absolute;
           bottom: 8px;
           left: 8px;
-          background: rgba(0,0,0,0.75);
-          color: #FFF;
+          background: rgba(0,0,0,0.8);
+          color: #34D399;
           padding: 2px 8px;
           border-radius: var(--radius-sm);
           font-size: 9.5px;
+          border: 1px solid rgba(255,255,255,0.08);
         }
 
         .empty-registry-state {
@@ -904,9 +917,9 @@ export const ImageReview: React.FC = () => {
           grid-template-columns: repeat(3, 1fr);
           gap: 12px;
           padding: 10px 14px;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.02);
           border-radius: var(--radius-sm);
-          border: 1px solid var(--border-default);
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         @media (max-width: 768px) {
@@ -927,25 +940,25 @@ export const ImageReview: React.FC = () => {
           gap: 5px;
           font-size: 10.5px;
           color: var(--text-muted);
-          font-weight: 500;
+          font-weight: 600;
         }
 
         .cell-value {
           font-size: 11.5px;
           font-weight: 600;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .decision-action-bar {
           display: flex;
           gap: 8px;
           flex-wrap: wrap;
-          padding-top: 6px;
-          border-top: 1px solid var(--border-default);
+          padding-top: 10px;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .text-danger {
-          color: #DC2626 !important;
+          color: #F87171 !important;
         }
 
         .spin-icon {
