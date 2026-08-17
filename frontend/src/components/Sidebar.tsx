@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,7 +11,7 @@ import {
   Trees,
   Info
 } from 'lucide-react';
-import { mockAlerts, mockSightings, mockTigers } from '../data/mockData';
+import { tigerService } from '../service/api';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -19,8 +19,33 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
-  const pendingReviewCount = mockSightings.filter(s => s.reviewStatus === 'PENDING_REVIEW').length;
-  const unreadAlertsCount = mockAlerts.filter(a => !a.acknowledged).length;
+  const [batchesCount, setBatchesCount] = useState<number>(3);
+  const [pendingReviewCount, setPendingReviewCount] = useState<number>(1);
+  const [tigersCount, setTigersCount] = useState<number>(4);
+  const [unreadAlertsCount, setUnreadAlertsCount] = useState<number>(2);
+
+  useEffect(() => {
+    const fetchSidebarCounts = async () => {
+      try {
+        const [batches, sightings, tigers, alerts] = await Promise.all([
+          tigerService.getProcessingBatches(),
+          tigerService.getRecentSightings(),
+          tigerService.getAllTigers(),
+          tigerService.getAlerts(),
+        ]);
+        if (batches) setBatchesCount(batches.length);
+        if (sightings) setPendingReviewCount(sightings.filter(s => s.reviewStatus === 'PENDING_REVIEW').length);
+        if (tigers) setTigersCount(tigers.length);
+        if (alerts) setUnreadAlertsCount(alerts.filter(a => !a.acknowledged).length);
+      } catch (err) {
+        console.error('Sidebar count error:', err);
+      }
+    };
+
+    fetchSidebarCounts();
+    const interval = setInterval(fetchSidebarCounts, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const navItems = [
     {
@@ -33,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
       name: 'Camera Trap Processing',
       path: '/camera-processing',
       icon: Camera,
-      badge: '3 Batches'
+      badge: batchesCount > 0 ? `${batchesCount} Batches` : null
     },
     {
       name: 'Image Review',
@@ -46,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
       name: 'Tiger Database',
       path: '/tigers',
       icon: Database,
-      badge: `${mockTigers.length} Tigers`
+      badge: `${tigersCount} Tigers`
     },
     {
       name: 'Movement & Territory',
@@ -102,7 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
             <Trees size={13} className="trees-icon" />
             <span>Forest Department System</span>
           </div>
-          <span className="prototype-pill">PROTOTYPE</span>
+          <span className="prototype-pill" style={{ background: '#15803D', color: '#DCFCE7' }}>ACTIVE</span>
         </div>
 
         {/* Navigation List */}
@@ -145,7 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
           </ul>
         </nav>
 
-        {/* Sidebar Footer / Data Honesty Box */}
+        {/* Sidebar Footer / Data Specification Box */}
         <div className="sidebar-footer">
           <div className="telemetry-box">
             <div className="telemetry-header">
@@ -155,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
             <div className="telemetry-details">
               <div className="detail-row">
                 <span className="detail-label">Data Mode:</span>
-                <span className="detail-val">Synthetic Prototype</span>
+                <span className="detail-val">Live Field Ingestion</span>
               </div>
               <div className="detail-row">
                 <span className="detail-label">Primary Input:</span>

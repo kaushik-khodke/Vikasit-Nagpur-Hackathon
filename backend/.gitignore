@@ -1,0 +1,53 @@
+# Python Bytecode & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.env.local
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Large Model Weights
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+models/*.pt
+models/*.pth
+models/*.bin
+models/*.safetensors
+yolov8n.pt
+!models/.gitkeep
+
+# Large Videos, Cropped Images & Temporary Dumps
+data/input_stream/*.mp4
+data/input_stream/*.webm
+data/input_stream/*.avi
+data/input_stream/*.mov
+data/evidence_recordings/*.mp4
+data/evidence_recordings/*.avi
+data/temp_video_frames/
+data/crops/*.jpg
+data/crops/*.png
+data/quarantine/*.jpg
+data/quarantine/*.png
+data/quarantine/*.webm
+data/quarantine/*.mp4
+!data/**/.gitkeep
+
+# Database Storage & Logs
+pgdata/
+*.sql.dump
+*.log
+logs/
+benchmark_report.json
+
+# System & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

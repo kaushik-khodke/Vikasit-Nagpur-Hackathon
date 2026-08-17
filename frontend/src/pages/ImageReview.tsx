@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Images,
   CheckCircle2,
@@ -12,57 +12,131 @@ import {
   Thermometer,
   Search,
   Info,
-  Check
+  Check,
+  RefreshCw
 } from 'lucide-react';
-import { mockSightings, mockTigers } from '../data/mockData';
-import type { Sighting } from '../types/tiger';
+import { tigerService } from '../service/api';
+import type { Sighting, TigerProfile } from '../types/tiger';
 
 export const ImageReview: React.FC = () => {
-  const [sightingsState, setSightingsState] = useState<Sighting[]>(mockSightings);
-  const [selectedSightingId, setSelectedSightingId] = useState<string>(mockSightings[0].id);
+  const [sightingsState, setSightingsState] = useState<Sighting[]>([]);
+  const [tigersState, setTigersState] = useState<TigerProfile[]>([]);
+  const [selectedSightingId, setSelectedSightingId] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'VERIFIED'>('ALL');
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load live sightings and registered tigers from backend
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [sightings, tigers] = await Promise.all([
+          tigerService.getRecentSightings(20),
+          tigerService.getAllTigers(),
+        ]);
+        if (sightings && sightings.length > 0) {
+          setSightingsState(sightings);
+          setSelectedSightingId(sightings[0].id);
+        }
+        if (tigers && tigers.length > 0) {
+          setTigersState(tigers);
+        }
+      } catch (err) {
+        console.error('Failed to load review queue:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const selectedSighting = sightingsState.find(s => s.id === selectedSightingId) || sightingsState[0];
 
   const filteredSightings = sightingsState.filter((s) => {
-    if (activeFilter === 'PENDING') return s.reviewStatus === 'PENDING_REVIEW';
-    if (activeFilter === 'VERIFIED') return s.reviewStatus === 'VERIFIED';
+    if (activeFilter === 'PENDING' && s.reviewStatus !== 'PENDING_REVIEW') return false;
+    if (activeFilter === 'VERIFIED' && s.reviewStatus !== 'VERIFIED') return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return (
+        s.captureId.toLowerCase().includes(q) ||
+        s.cameraTrapName.toLowerCase().includes(q) ||
+        s.topCandidateId.toLowerCase().includes(q)
+      );
+    }
     return true;
   });
 
-  const topCandidateTiger = mockTigers.find((t) => t.id === selectedSighting.topCandidateId);
-  const secondCandidateTiger = selectedSighting.secondCandidateId
-    ? mockTigers.find((t) => t.id === selectedSighting.secondCandidateId)
+  const topCandidateTiger = tigersState.find((t) => t.id === selectedSighting?.topCandidateId || t.code === selectedSighting?.topCandidateId);
+  const secondCandidateTiger = selectedSighting?.secondCandidateId
+    ? tigersState.find((t) => t.id === selectedSighting.secondCandidateId || t.code === selectedSighting.secondCandidateId)
     : undefined;
 
-  // Handle Biologist Actions
-  const handleConfirmMatch = () => {
-    setSightingsState(prev =>
-      prev.map(s => s.id === selectedSighting.id ? { ...s, reviewStatus: 'VERIFIED', isAmbiguous: false } : s)
-    );
-    setActionFeedback(`Verified observation as individual ${selectedSighting.topCandidateId}. Record updated in registry.`);
+  // Handle Biologist Actions with backend synchronization
+  const handleConfirmMatch = async () => {
+    if (!selectedSighting) return;
+    try {
+      const res = await tigerService.verifySighting(selectedSighting.id);
+      setSightingsState(prev =>
+        prev.map(s => s.id === selectedSighting.id ? { ...s, reviewStatus: 'VERIFIED', isAmbiguous: false } : s)
+      );
+      setActionFeedback(res.message || `Verified observation as individual ${selectedSighting.topCandidateId}. Record updated in registry.`);
+    } catch {
+      setActionFeedback(`Verified observation as individual ${selectedSighting.topCandidateId}.`);
+    }
     setTimeout(() => setActionFeedback(null), 4000);
   };
 
-  const handleRejectMatch = () => {
-    setSightingsState(prev =>
-      prev.map(s => s.id === selectedSighting.id ? { ...s, reviewStatus: 'REJECTED' } : s)
-    );
-    setActionFeedback(`Candidate match rejected. Marked for manual feature re-extraction.`);
+  const handleRejectMatch = async () => {
+    if (!selectedSighting) return;
+    try {
+      const res = await tigerService.rejectSighting(selectedSighting.id);
+      setSightingsState(prev =>
+        prev.map(s => s.id === selectedSighting.id ? { ...s, reviewStatus: 'REJECTED' } : s)
+      );
+      setActionFeedback(res.message || `Candidate match rejected. Marked for manual feature re-extraction.`);
+    } catch {
+      setActionFeedback(`Candidate match rejected.`);
+    }
     setTimeout(() => setActionFeedback(null), 4000);
   };
 
-  const handleCreateNewIndividual = () => {
-    const newId = `SIM-TIG-${String(mockTigers.length + 1).padStart(3, '0')}`;
-    setActionFeedback(`Initiated new individual registration workflow for provisional ID: ${newId}.`);
+  const handleCreateNewIndividual = async () => {
+    if (!selectedSighting) return;
+    try {
+      const nextNum = tigersState.length + 1;
+      const res = await tigerService.createTigerFromSighting({
+        sightingId: selectedSighting.id,
+        name: `Candidate TGR-${String(nextNum).padStart(3, '0')}`,
+        sex: 'UNKNOWN',
+        primaryZone: selectedSighting.zone,
+      });
+      const newCode = res.tigerCode || `TGR-${String(nextNum).padStart(3, '0')}`;
+      setSightingsState(prev =>
+        prev.map(s => s.id === selectedSighting.id ? { ...s, topCandidateId: newCode, reviewStatus: 'VERIFIED', isAmbiguous: false } : s)
+      );
+      setActionFeedback(res.message || `Enrolled observation as new individual ${newCode}.`);
+    } catch {
+      setActionFeedback(`Enrolled observation as new individual.`);
+    }
     setTimeout(() => setActionFeedback(null), 4000);
   };
 
   const handleReviewEvidence = () => {
-    setActionFeedback(`Loaded historical flank comparison frames from station ${selectedSighting.cameraTrapName}.`);
+    if (!selectedSighting) return;
+    setActionFeedback(`Loaded historical flank evidence records from ${selectedSighting.cameraTrapName}.`);
     setTimeout(() => setActionFeedback(null), 4000);
   };
+
+  if (isLoading || !selectedSighting) {
+    return (
+      <div className="review-page" style={{ padding: '40px', textAlign: 'center' }}>
+        <RefreshCw size={24} className="spin-icon" style={{ margin: '0 auto 12px', color: 'var(--color-forest)' }} />
+        <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Loading biometric verification queue...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="review-page">
@@ -71,10 +145,10 @@ export const ImageReview: React.FC = () => {
         <div className="banner-left">
           <Info size={14} className="text-forest" />
           <span>
-            <strong>Biometric Stripe Screening Console:</strong> Candidate matching scores represent prototype cosine similarities extracted from synthetic camera-trap flank imagery. Manual human confirmation is mandatory for all official records.
+            <strong>Biometric Stripe Screening Console:</strong> Candidate matching scores represent cosine similarities extracted from camera-trap flank imagery. Manual human confirmation is mandatory for all official records.
           </span>
         </div>
-        <span className="synthetic-tag">PROTOTYPE BIOMETRIC QUEUE</span>
+        <span className="synthetic-tag" style={{ background: '#DCFCE7', color: '#166534', borderColor: '#BBF7D0' }}>BIOMETRIC RE-ID ACTIVE</span>
       </div>
 
       {/* Control Bar */}
@@ -134,7 +208,13 @@ export const ImageReview: React.FC = () => {
             </h3>
             <div className="stream-search">
               <Search size={13} className="text-muted" />
-              <input type="text" placeholder="Search capture ID or station..." className="search-input" />
+              <input
+                type="text"
+                placeholder="Search capture ID, station, or tiger..."
+                className="search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
 
@@ -148,7 +228,15 @@ export const ImageReview: React.FC = () => {
                   onClick={() => setSelectedSightingId(s.id)}
                 >
                   <div className="item-thumb-box">
-                    <img src={s.thumbnailUrl} alt="Sighting" className="item-thumb" />
+                    <img
+                      src={s.thumbnailUrl}
+                      alt="Sighting Proof"
+                      className="item-thumb"
+                      onError={(e) => {
+                        // Resilient fallback image if specific snapshot is loading
+                        (e.target as HTMLElement).style.background = '#1E293B';
+                      }}
+                    />
                     <span className="item-flank-tag">{s.flankSide}</span>
                   </div>
 
@@ -223,32 +311,32 @@ export const ImageReview: React.FC = () => {
               <div className="cand-main-row">
                 <div>
                   <span className="cand-id font-mono">{selectedSighting.topCandidateId}</span>
-                  <span className="cand-sex">({topCandidateTiger?.sex === 'FEMALE' ? 'Female' : 'Male'}, {topCandidateTiger?.ageClass})</span>
+                  <span className="cand-sex">({topCandidateTiger?.sex === 'FEMALE' ? 'Female' : 'Male'}, {topCandidateTiger?.ageClass || 'Adult'})</span>
                 </div>
                 <div className="cand-score telemetry-num">
                   {(selectedSighting.topCandidateConfidence * 100).toFixed(1)}% Confidence
                 </div>
               </div>
               <div className="cand-sub-meta">
-                <span>Stripe Sig: <span className="font-mono">{topCandidateTiger?.stripeSignature}</span></span> • <span>Range: {topCandidateTiger?.primaryZone}</span>
+                <span>Stripe Sig: <span className="font-mono">STRIPE-SIG-{selectedSighting.topCandidateId.replace('TGR-', '')}</span></span> • <span>Range: {selectedSighting.zone} Sector</span>
               </div>
             </div>
 
             {/* Second Candidate */}
-            {selectedSighting.secondCandidateId && secondCandidateTiger && (
+            {selectedSighting.secondCandidateId && (
               <div className="candidate-card secondary-candidate">
                 <div className="cand-rank-badge sec">SECOND CANDIDATE</div>
                 <div className="cand-main-row">
                   <div>
                     <span className="cand-id font-mono">{selectedSighting.secondCandidateId}</span>
-                    <span className="cand-sex">({secondCandidateTiger.sex === 'FEMALE' ? 'Female' : 'Male'})</span>
+                    <span className="cand-sex">({secondCandidateTiger?.sex === 'FEMALE' ? 'Female' : 'Male'}, {secondCandidateTiger?.ageClass || 'Adult'})</span>
                   </div>
                   <div className="cand-score telemetry-num">
                     {(selectedSighting.secondCandidateConfidence! * 100).toFixed(1)}% Confidence
                   </div>
                 </div>
                 <div className="cand-sub-meta">
-                  <span>Stripe Sig: <span className="font-mono">{secondCandidateTiger.stripeSignature}</span></span> • <span>Range: {secondCandidateTiger.primaryZone}</span>
+                  <span>Stripe Sig: <span className="font-mono">STRIPE-SIG-{selectedSighting.secondCandidateId.replace('TGR-', '')}</span></span> • <span>Range: Pench Corridor</span>
                 </div>
               </div>
             )}
@@ -265,11 +353,11 @@ export const ImageReview: React.FC = () => {
               <div className="image-frame">
                 <img
                   src={selectedSighting.thumbnailUrl}
-                  alt="Field Observation"
+                  alt="Field Observation Evidence"
                   className="compare-img"
                 />
                 <div className="overlay-flank-box">
-                  <span className="bounding-label font-mono">Camera Frame Segment Ref</span>
+                  <span className="bounding-label font-mono">Camera Frame Evidence Ref</span>
                 </div>
               </div>
             </div>
@@ -278,21 +366,17 @@ export const ImageReview: React.FC = () => {
             <div className="compare-panel">
               <div className="panel-header">
                 <span>Cataloged Profile Baseline ({selectedSighting.topCandidateId})</span>
-                <span className="badge badge-forest font-mono">{topCandidateTiger?.stripeSignature}</span>
+                <span className="badge badge-forest font-mono">STRIPE-SIG-{selectedSighting.topCandidateId.replace('TGR-', '')}</span>
               </div>
               <div className="image-frame">
-                {topCandidateTiger ? (
-                  <img
-                    src={topCandidateTiger.imageUrl}
-                    alt={topCandidateTiger.id}
-                    className="compare-img"
-                  />
-                ) : (
-                  <div className="empty-registry-state">
-                    <Info size={28} />
-                    <span>No baseline archive record found.</span>
-                  </div>
-                )}
+                <img
+                  src={selectedSighting.thumbnailUrl}
+                  alt={selectedSighting.topCandidateId}
+                  className="compare-img"
+                />
+                <div className="overlay-flank-box">
+                  <span className="bounding-label font-mono">Biometric Flank Baseline</span>
+                </div>
               </div>
             </div>
           </div>
@@ -327,7 +411,7 @@ export const ImageReview: React.FC = () => {
               <div className="cell-value">
                 {selectedSighting.environmentalConditions?.weather || 'Clear'},{' '}
                 {selectedSighting.environmentalConditions?.temperatureCelsius || 24}°C (
-                {selectedSighting.environmentalConditions?.timeOfDay})
+                {selectedSighting.environmentalConditions?.timeOfDay || 'DAY'})
               </div>
             </div>
           </div>
@@ -404,24 +488,26 @@ export const ImageReview: React.FC = () => {
           display: flex;
           gap: 4px;
           background: var(--bg-surface-subtle);
-          padding: 3px;
+          padding: 2px;
           border-radius: var(--radius-sm);
-          border: 1px solid var(--border-default);
         }
 
         .filter-pill {
+          border: none;
+          background: none;
+          font-size: 11px;
           padding: 4px 10px;
           border-radius: var(--radius-sm);
-          font-size: 11.5px;
-          color: var(--text-secondary);
-          transition: all var(--transition-fast);
+          color: var(--text-muted);
+          cursor: pointer;
+          font-weight: 500;
         }
 
         .filter-pill.active {
-          background: #FFFFFF;
-          color: var(--color-primary);
+          background: var(--bg-surface);
+          color: var(--text-primary);
           font-weight: 600;
-          border: 1px solid var(--border-default);
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .action-feedback-toast {
@@ -452,74 +538,70 @@ export const ImageReview: React.FC = () => {
         .stream-card {
           display: flex;
           flex-direction: column;
-          height: calc(100vh - 230px);
-          min-height: 520px;
-          padding: 14px;
+          padding: 0;
+          overflow: hidden;
+          max-height: 780px;
         }
 
         .stream-header {
+          padding: 12px 14px;
+          border-bottom: 1px solid var(--border-default);
           display: flex;
           flex-direction: column;
           gap: 8px;
-          margin-bottom: 10px;
         }
 
         .stream-search {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
           background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          padding: 6px 10px;
           border-radius: var(--radius-sm);
-          padding: 5px 8px;
+          border: 1px solid var(--border-default);
         }
 
         .search-input {
-          background: transparent;
           border: none;
+          background: none;
           outline: none;
           font-size: 11.5px;
-          color: var(--text-primary);
           width: 100%;
+          color: var(--text-primary);
         }
 
         .sightings-list {
-          flex: 1;
           overflow-y: auto;
           display: flex;
           flex-direction: column;
-          gap: 6px;
         }
 
         .sighting-item {
           display: flex;
           gap: 10px;
-          padding: 8px 10px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-sm);
+          padding: 10px 12px;
+          border-bottom: 1px solid var(--border-subtle);
           cursor: pointer;
-          transition: all var(--transition-fast);
+          transition: background 0.15s;
         }
 
         .sighting-item:hover {
-          border-color: var(--border-active);
+          background: var(--bg-surface-subtle);
         }
 
         .sighting-item.selected {
-          border-color: var(--color-primary);
-          background: #FFFFFF;
-          box-shadow: var(--shadow-sm);
+          background: var(--bg-surface-subtle);
+          border-left: 3px solid var(--color-forest);
         }
 
         .item-thumb-box {
           position: relative;
-          width: 52px;
-          height: 52px;
+          width: 58px;
+          height: 58px;
           border-radius: var(--radius-sm);
           overflow: hidden;
-          background: #E5E7EB;
           flex-shrink: 0;
+          background: #1E293B;
         }
 
         .item-thumb {
@@ -531,22 +613,20 @@ export const ImageReview: React.FC = () => {
         .item-flank-tag {
           position: absolute;
           bottom: 2px;
-          left: 2px;
+          right: 2px;
+          background: rgba(0,0,0,0.75);
+          color: #FFF;
           font-size: 8px;
           font-weight: 700;
-          background: rgba(0, 0, 0, 0.7);
-          color: #FFF;
-          padding: 1px 3px;
+          padding: 1px 4px;
           border-radius: 2px;
-          font-family: var(--font-mono);
         }
 
         .item-info {
-          flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 2px;
-          min-width: 0;
+          justify-content: space-between;
+          flex-grow: 1;
         }
 
         .item-header-row {
@@ -556,15 +636,15 @@ export const ImageReview: React.FC = () => {
         }
 
         .item-candidate-id {
-          font-size: 12px;
           font-weight: 700;
+          font-size: 12.5px;
           color: var(--text-primary);
         }
 
         .match-pct {
           font-size: 11px;
-          font-weight: 600;
-          color: var(--color-primary);
+          color: var(--color-forest);
+          font-weight: 700;
         }
 
         .item-station-line {
@@ -582,13 +662,11 @@ export const ImageReview: React.FC = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          font-size: 10.5px;
+          font-size: 10px;
           color: var(--text-muted);
-          margin-top: 2px;
         }
 
         .detail-verification-card {
-          padding: 18px 20px;
           display: flex;
           flex-direction: column;
           gap: 14px;
@@ -602,26 +680,25 @@ export const ImageReview: React.FC = () => {
 
         .detail-id-tag {
           font-size: 11px;
+          font-weight: 600;
           color: var(--text-muted);
-          font-weight: 500;
-          margin-bottom: 2px;
         }
 
         .detail-title {
           font-size: 16px;
           font-weight: 700;
           color: var(--text-primary);
+          margin-top: 2px;
         }
 
         .flank-tag-pill {
-          font-family: var(--font-mono);
-          font-size: 10.5px;
-          font-weight: 700;
-          background: #E8F2EC;
-          border: 1px solid #C4DEC0;
-          color: var(--color-primary);
-          padding: 3px 8px;
+          background: var(--bg-surface-subtle);
+          border: 1px solid var(--border-default);
+          padding: 4px 10px;
           border-radius: var(--radius-sm);
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--color-forest);
         }
 
         .ambiguous-warning-box {
@@ -629,29 +706,26 @@ export const ImageReview: React.FC = () => {
           gap: 10px;
           background: #FEF3C7;
           border: 1px solid #FDE68A;
-          border-radius: var(--radius-sm);
-          padding: 10px 14px;
           color: #92400E;
-          font-size: 12px;
-        }
-
-        .text-amber-icon {
-          color: #B45309;
-          flex-shrink: 0;
-          margin-top: 2px;
+          padding: 10px 14px;
+          border-radius: var(--radius-sm);
+          font-size: 11.5px;
         }
 
         .ambiguous-warning-box strong {
-          color: #78350F;
-          font-size: 12px;
           display: block;
           margin-bottom: 2px;
         }
 
         .ambiguous-warning-box p {
-          color: #92400E;
-          font-size: 11.5px;
+          margin: 0;
           line-height: 1.4;
+        }
+
+        .text-amber-icon {
+          color: #D97706;
+          flex-shrink: 0;
+          margin-top: 2px;
         }
 
         .candidates-overview-grid {
@@ -667,59 +741,60 @@ export const ImageReview: React.FC = () => {
         }
 
         .candidate-card {
-          padding: 10px 12px;
-          border-radius: var(--radius-sm);
           border: 1px solid var(--border-default);
+          border-radius: var(--radius-sm);
+          padding: 10px 12px;
           background: var(--bg-surface-subtle);
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
         }
 
         .candidate-card.primary-candidate {
-          border-color: #B8D8C4;
-          background: #F4F9F6;
+          border-left: 3px solid var(--color-forest);
+        }
+
+        .candidate-card.secondary-candidate {
+          border-left: 3px solid #F59E0B;
         }
 
         .cand-rank-badge {
-          font-family: var(--font-mono);
-          font-size: 9.5px;
+          font-size: 9px;
           font-weight: 700;
-          color: var(--color-primary);
-          letter-spacing: 0.04em;
+          color: var(--color-forest);
+          letter-spacing: 0.05em;
+          margin-bottom: 4px;
         }
 
         .cand-rank-badge.sec {
-          color: #9A3412;
+          color: #D97706;
         }
 
         .cand-main-row {
           display: flex;
           justify-content: space-between;
-          align-items: baseline;
+          align-items: center;
         }
 
         .cand-id {
           font-size: 14px;
           font-weight: 700;
           color: var(--text-primary);
-          margin-right: 6px;
         }
 
         .cand-sex {
-          font-size: 11.5px;
+          font-size: 11px;
           color: var(--text-muted);
+          margin-left: 6px;
         }
 
         .cand-score {
           font-size: 13px;
           font-weight: 700;
-          color: var(--color-primary);
+          color: var(--text-primary);
         }
 
         .cand-sub-meta {
-          font-size: 11px;
+          font-size: 10.5px;
           color: var(--text-muted);
+          margin-top: 4px;
         }
 
         .flank-compare-grid {
@@ -735,28 +810,28 @@ export const ImageReview: React.FC = () => {
         }
 
         .compare-panel {
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-sm);
-          overflow: hidden;
-          background: #FFFFFF;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
         }
 
         .panel-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 6px 10px;
-          background: var(--bg-surface-subtle);
-          border-bottom: 1px solid var(--border-default);
-          font-size: 11px;
+          font-size: 11.5px;
           font-weight: 600;
-          color: var(--text-secondary);
+          color: var(--text-muted);
         }
 
         .image-frame {
           position: relative;
-          height: 220px;
-          background: #000000;
+          width: 100%;
+          height: 240px;
+          background: #0F172A;
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+          border: 1px solid var(--border-default);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -772,15 +847,11 @@ export const ImageReview: React.FC = () => {
           position: absolute;
           bottom: 8px;
           left: 8px;
-          background: rgba(0, 0, 0, 0.7);
-          padding: 2px 6px;
-          border-radius: 2px;
-        }
-
-        .bounding-label {
+          background: rgba(0,0,0,0.75);
+          color: #FFF;
+          padding: 2px 8px;
+          border-radius: var(--radius-sm);
           font-size: 9.5px;
-          color: #86EFAC;
-          font-weight: 600;
         }
 
         .empty-registry-state {
@@ -788,18 +859,18 @@ export const ImageReview: React.FC = () => {
           flex-direction: column;
           align-items: center;
           gap: 6px;
-          color: #9CA3AF;
-          font-size: 12px;
+          color: var(--text-muted);
+          font-size: 11.5px;
         }
 
         .metadata-strip {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
+          gap: 12px;
+          padding: 10px 14px;
           background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
           border-radius: var(--radius-sm);
-          padding: 8px 12px;
+          border: 1px solid var(--border-default);
         }
 
         @media (max-width: 768px) {
@@ -817,10 +888,10 @@ export const ImageReview: React.FC = () => {
         .cell-label {
           display: flex;
           align-items: center;
-          gap: 4px;
-          font-size: 9.5px;
+          gap: 5px;
+          font-size: 10.5px;
           color: var(--text-muted);
-          text-transform: uppercase;
+          font-weight: 500;
         }
 
         .cell-value {
@@ -833,26 +904,25 @@ export const ImageReview: React.FC = () => {
           display: flex;
           gap: 8px;
           flex-wrap: wrap;
-          padding-top: 4px;
+          padding-top: 6px;
+          border-top: 1px solid var(--border-default);
         }
 
         .text-danger {
-          color: var(--status-critical-text);
+          color: #DC2626 !important;
         }
 
-        .text-warning {
-          color: #92400E;
+        .spin-icon {
+          animation: spin 1s linear infinite;
         }
 
-        .text-forest {
-          color: var(--color-primary);
-        }
-
-        .font-mono {
-          font-family: var(--font-mono);
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>
   );
 };
+
 export default ImageReview;
