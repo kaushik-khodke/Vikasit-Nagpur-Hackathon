@@ -6,6 +6,7 @@ import {
   Popup,
   Polyline,
   Polygon,
+  ZoomControl,
   useMap
 } from 'react-leaflet';
 import L from 'leaflet';
@@ -269,10 +270,12 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
       <MapContainer
         center={defaultCenter}
         zoom={11}
+        zoomControl={false}
         scrollWheelZoom={true}
         className="leaflet-map-canvas"
         style={{ height: '100%', width: '100%', borderRadius: '6px' }}
       >
+        <ZoomControl position="bottomright" />
         <MapViewController center={activeCenter} zoom={activeZoom} />
 
         {/* Dynamic Basemap Rendering */}
@@ -505,6 +508,7 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           z-index: 500;
           display: flex;
           flex-direction: column;
+          align-items: flex-start;
         }
 
         .layer-control-trigger {
@@ -543,7 +547,7 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           margin-left: 2px;
         }
 
-        /* Dropdown Card */
+        /* Dropdown Card (Opens Downward) */
         .layer-control-dropdown {
           margin-top: 8px;
           width: 240px;
