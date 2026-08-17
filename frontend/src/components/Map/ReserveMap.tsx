@@ -17,6 +17,11 @@ import {
   Check
 } from 'lucide-react';
 import type { TigerProfile, CameraTrap, ReserveZone } from '../../types/tiger';
+import {
+  PENCH_RESERVE_BOUNDARY,
+  PENCH_100M_BUFFER_COORDINATES,
+  NEARBY_VILLAGES,
+} from '../../data/gisData';
 import 'leaflet/dist/leaflet.css';
 
 // Fix default Leaflet icon paths in case standard markers are used
@@ -108,6 +113,9 @@ export interface ReserveMapProps {
   showCameras?: boolean;
   showPolygons?: boolean;
   showPaths?: boolean;
+  showPenchBoundary?: boolean;
+  show100mBuffer?: boolean;
+  showVillages?: boolean;
   height?: string | number;
   className?: string;
 }
@@ -120,12 +128,18 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
   showCameras = true,
   showPolygons = true,
   showPaths = true,
+  showPenchBoundary = true,
+  show100mBuffer = true,
+  showVillages = true,
   height = '100%',
   className = ''
 }) => {
   // Basemap & Overlay State
   const [basemap, setBasemap] = useState<BasemapStyle>('google-satellite');
   const [showLabels, setShowLabels] = useState<boolean>(true);
+  const [showPenchBoundaryLayer, setShowPenchBoundaryLayer] = useState<boolean>(showPenchBoundary);
+  const [show100mBufferLayer, setShow100mBufferLayer] = useState<boolean>(show100mBuffer);
+  const [showVillagesLayer, setShowVillagesLayer] = useState<boolean>(showVillages);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -140,7 +154,7 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Synthetic coordinates for Pench Tiger Reserve area
+  // Center coordinate for Pench Tiger Reserve area
   const defaultCenter: [number, number] = [21.730, 79.320];
 
   // Determine active center based on selected individual or zone
@@ -246,7 +260,37 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
 
             <div className="dropdown-divider" />
 
-            <div className="dropdown-section-title">MAP DETAILS & OVERLAYS</div>
+            <div className="dropdown-section-title">GIS BOUNDARIES & OVERLAYS</div>
+
+            <label className="overlay-checkbox-row">
+              <input
+                type="checkbox"
+                checked={showPenchBoundaryLayer}
+                onChange={(e) => setShowPenchBoundaryLayer(e.target.checked)}
+                className="overlay-checkbox"
+              />
+              <span className="checkbox-text">Pench Reserve Boundary</span>
+            </label>
+
+            <label className="overlay-checkbox-row">
+              <input
+                type="checkbox"
+                checked={show100mBufferLayer}
+                onChange={(e) => setShow100mBufferLayer(e.target.checked)}
+                className="overlay-checkbox"
+              />
+              <span className="checkbox-text">100m Alert Buffer Zone</span>
+            </label>
+
+            <label className="overlay-checkbox-row">
+              <input
+                type="checkbox"
+                checked={showVillagesLayer}
+                onChange={(e) => setShowVillagesLayer(e.target.checked)}
+                className="overlay-checkbox"
+              />
+              <span className="checkbox-text">Nearby Village Boundaries</span>
+            </label>
 
             <label className="overlay-checkbox-row">
               <input
@@ -334,6 +378,121 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
             subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
             maxZoom={20}
           />
+        )}
+
+        {/* 1. NEARBY VILLAGE BOUNDARIES */}
+        {showVillagesLayer && NEARBY_VILLAGES.map((village) => (
+          <Polygon
+            key={`vil-${village.id}`}
+            positions={village.polygonCoordinates}
+            pathOptions={{
+              color: '#818CF8',
+              fillColor: '#6366F1',
+              fillOpacity: 0.12,
+              weight: 2,
+              dashArray: '4, 4'
+            }}
+          >
+            <Popup>
+              <div className="tt-map-popup">
+                <div className="popup-header-row">
+                  <span className="popup-village-badge">VILLAGE BOUNDARY</span>
+                  <span className="popup-zone-badge">{village.state}</span>
+                </div>
+                <div className="popup-station-name">{village.name}</div>
+                <div className="popup-body">
+                  <div className="popup-stat-row">
+                    <span className="lbl">District:</span>
+                    <span className="val">{village.district}</span>
+                  </div>
+                  <div className="popup-stat-row">
+                    <span className="lbl">Fringe Sector:</span>
+                    <span className="val">{village.zoneFringe}</span>
+                  </div>
+                  <div className="popup-stat-row">
+                    <span className="lbl">Zone Category:</span>
+                    <span className="val">Peripheral Settlement</span>
+                  </div>
+                </div>
+              </div>
+            </Popup>
+          </Polygon>
+        ))}
+
+        {/* 2. TRUE 100-METER GEODESIC BUFFER ZONE */}
+        {show100mBufferLayer && (
+          <Polygon
+            key="pench-100m-alert-buffer"
+            positions={PENCH_100M_BUFFER_COORDINATES}
+            pathOptions={{
+              color: '#F59E0B',
+              fillColor: '#F59E0B',
+              fillOpacity: 0.08,
+              weight: 2.2,
+              dashArray: '5, 5'
+            }}
+          >
+            <Popup>
+              <div className="tt-map-popup">
+                <div className="popup-header-row">
+                  <span className="popup-buffer-badge">100m ALERT ZONE</span>
+                  <span className="popup-zone-badge">Geodesic Buffer (WGS84)</span>
+                </div>
+                <div className="popup-station-name">100-Meter Reserve Perimeter Alert Zone</div>
+                <div className="popup-body">
+                  <div className="popup-stat-row">
+                    <span className="lbl">Buffer Offset:</span>
+                    <span className="val">100.0 meters</span>
+                  </div>
+                  <div className="popup-stat-row">
+                    <span className="lbl">Operational Rule:</span>
+                    <span className="val font-mono">distance(tiger, boundary) &le; 100m</span>
+                  </div>
+                  <div className="popup-notice">
+                    * Automatic high-risk alert triggers if a tiger detection occurs within this 100-meter perimeter.
+                  </div>
+                </div>
+              </div>
+            </Popup>
+          </Polygon>
+        )}
+
+        {/* 3. AUTHORITATIVE PENCH TIGER RESERVE BOUNDARY */}
+        {showPenchBoundaryLayer && (
+          <Polygon
+            key="pench-protected-reserve-boundary"
+            positions={PENCH_RESERVE_BOUNDARY}
+            pathOptions={{
+              color: '#10B981',
+              fillColor: '#10B981',
+              fillOpacity: 0.05,
+              weight: 3.5
+            }}
+          >
+            <Popup>
+              <div className="tt-map-popup">
+                <div className="popup-header-row">
+                  <span className="popup-reserve-badge">PROTECTED AREA</span>
+                  <span className="popup-zone-badge">EPSG:4326</span>
+                </div>
+                <div className="popup-station-name">Pench Tiger Reserve / Protected Area</div>
+                <div className="popup-body">
+                  <div className="popup-stat-row">
+                    <span className="lbl">Category:</span>
+                    <span className="val">Critical Tiger Habitat (Core + Sanctuary)</span>
+                  </div>
+                  <div className="popup-stat-row">
+                    <span className="lbl">Reserve Extent:</span>
+                    <span className="val">~1,179.6 km²</span>
+                  </div>
+                  <div className="popup-stat-row">
+                    <span className="lbl">Sectors:</span>
+                    <span className="val">Turia, Karmajhiri, Jamtara, Khursapar, Rukhad</span>
+                  </div>
+                </div>
+              </div>
+            </Popup>
+          </Polygon>
         )}
 
         {/* Home Range Territory Polygons */}
@@ -770,6 +929,39 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
         .popup-status-badge.offline {
           background: #FEE2E2;
           color: #991B1B;
+        }
+
+        .popup-reserve-badge {
+          font-family: var(--font-mono);
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #065F46;
+          background: #D1FAE5;
+          padding: 2px 6px;
+          border-radius: 3px;
+          border: 1px solid #A7F3D0;
+        }
+
+        .popup-buffer-badge {
+          font-family: var(--font-mono);
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #92400E;
+          background: #FEF3C7;
+          padding: 2px 6px;
+          border-radius: 3px;
+          border: 1px solid #FDE68A;
+        }
+
+        .popup-village-badge {
+          font-family: var(--font-mono);
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #3730A3;
+          background: #EEF2FF;
+          padding: 2px 6px;
+          border-radius: 3px;
+          border: 1px solid #C7D2FE;
         }
 
         .popup-station-name {
