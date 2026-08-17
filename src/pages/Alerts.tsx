@@ -5,15 +5,16 @@ import {
   ShieldAlert,
   MapPin,
   Clock,
-  CheckCircle,
+  CheckCircle2,
   Send,
-  Search
+  Search,
+  Info
 } from 'lucide-react';
-import { mockAlerts } from '../data/mockData';
-import type { AlertSeverity } from '../types/tiger';
+import { mockAlerts, mockTigers } from '../data/mockData';
+import type { AlertSeverity, AlertItem } from '../types/tiger';
 
 export const Alerts: React.FC = () => {
-  const [alertsState, setAlertsState] = useState(mockAlerts);
+  const [alertsState, setAlertsState] = useState<AlertItem[]>(mockAlerts);
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -29,7 +30,7 @@ export const Alerts: React.FC = () => {
       a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.zone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (a.associatedTigerCode && a.associatedTigerCode.toLowerCase().includes(searchQuery.toLowerCase()));
+      (a.associatedTigerId && a.associatedTigerId.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesSeverity && matchesSearch;
   });
 
@@ -37,25 +38,36 @@ export const Alerts: React.FC = () => {
 
   return (
     <div className="alerts-page">
+      {/* Synthetic Notice */}
+      <div className="synthetic-banner">
+        <div className="banner-left">
+          <Info size={14} className="text-forest" />
+          <span>
+            <strong>Field Advisory Prototype:</strong> Simulated observation alerts based on camera-trap triggers, boundary buffer proximity, and routine camera station diagnostics.
+          </span>
+        </div>
+        <span className="synthetic-tag">PROTOTYPE ADVISORY CONSOLE</span>
+      </div>
+
       {/* Top Banner Alert Summary */}
       <div className="alerts-hero tt-card">
         <div className="hero-text-col">
           <div className="hero-badge-row">
             <ShieldAlert size={14} className="text-danger" />
-            <span>FIELD OPERATIONS EARLY WARNING SYSTEM</span>
+            <span>FIELD OPERATIONS & CAMERA OBSERVATION ALERTS</span>
           </div>
-          <h2 className="hero-title">Perimeter, Corridor & Conflict Alert Console</h2>
+          <h2 className="hero-title">Perimeter, Dispersal & Station Diagnostics Console</h2>
           <p className="hero-desc">
-            Automated alerts generated from camera trap AI triggers, highway underpass sensors, and GPS radio collar geo-fences across Pench Tiger Reserve boundaries.
+            Operational advisories generated from camera-trap network captures, reserve boundary buffer checks, and camera station battery maintenance diagnostics across Pench Tiger Reserve.
           </p>
         </div>
 
         <div className="hero-stat-box">
-          <div className="stat-pill red">
+          <div className={`stat-pill ${unacknowledgedCount > 0 ? 'red' : 'green'}`}>
             <AlertTriangle size={18} />
             <div>
               <div className="num telemetry-num">{unacknowledgedCount}</div>
-              <div className="lbl">Action Required</div>
+              <div className="lbl">Awaiting Action</div>
             </div>
           </div>
         </div>
@@ -64,10 +76,10 @@ export const Alerts: React.FC = () => {
       {/* Filter and Search Bar */}
       <div className="tt-card alert-filters-card">
         <div className="search-box">
-          <Search size={16} className="text-muted" />
+          <Search size={14} className="text-muted" />
           <input
             type="text"
-            placeholder="Search alerts by tiger code, zone, or alert type..."
+            placeholder="Search alerts by Tiger ID (e.g. SIM-TIG-005), sector, or alert category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="search-input"
@@ -89,87 +101,101 @@ export const Alerts: React.FC = () => {
 
       {/* Alerts Stream List */}
       <div className="alerts-list">
-        {filteredAlerts.map((alert) => (
-          <div
-            key={alert.id}
-            className={`tt-card alert-card ${alert.severity.toLowerCase()} ${
-              alert.acknowledged ? 'acknowledged' : 'unacknowledged'
-            }`}
-          >
-            <div className="alert-card-top">
-              <div className="alert-header-left">
-                <span className={`badge ${alert.severity === 'HIGH' || alert.severity === 'CRITICAL' ? 'badge-red' : alert.severity === 'MEDIUM' ? 'badge-amber' : 'badge-blue'}`}>
-                  {alert.severity} SEVERITY
-                </span>
-                <span className="badge badge-subtle">{alert.category.replace(/_/g, ' ')}</span>
-                <span className="alert-id telemetry-num">{alert.id}</span>
-              </div>
+        {filteredAlerts.map((alert) => {
+          const associatedTiger = alert.associatedTigerId
+            ? mockTigers.find((t) => t.id === alert.associatedTigerId)
+            : undefined;
 
-              <div className="alert-time-meta">
-                <Clock size={12} />
-                <span className="telemetry-num">{new Date(alert.timestamp).toLocaleString()}</span>
-              </div>
-            </div>
-
-            <div className="alert-card-main">
-              <h3 className="alert-main-title">{alert.title}</h3>
-              <p className="alert-description">{alert.description}</p>
-
-              {alert.actionRequired && (
-                <div className="action-required-callout">
-                  <strong className="callout-label">Prescribed Range Action:</strong>
-                  <span>{alert.actionRequired}</span>
+          return (
+            <div
+              key={alert.id}
+              className={`tt-card alert-card ${alert.severity.toLowerCase()} ${
+                alert.acknowledged ? 'acknowledged' : 'unacknowledged'
+              }`}
+            >
+              <div className="alert-card-top">
+                <div className="alert-header-left">
+                  <span
+                    className={`badge ${
+                      alert.severity === 'HIGH' || alert.severity === 'CRITICAL'
+                        ? 'badge-red'
+                        : alert.severity === 'MEDIUM'
+                        ? 'badge-amber'
+                        : 'badge-blue'
+                    }`}
+                  >
+                    {alert.severity} PRIORITY
+                  </span>
+                  <span className="badge badge-subtle">{alert.category.replace(/_/g, ' ')}</span>
+                  <span className="alert-id telemetry-num">{alert.id}</span>
                 </div>
-              )}
 
-              <div className="alert-footer-meta">
-                <div className="meta-left">
-                  <div className="meta-tag">
-                    <MapPin size={12} className="text-amber" />
-                    <span>{alert.zone} Zone</span>
+                <div className="alert-time-meta">
+                  <Clock size={12} />
+                  <span className="telemetry-num">{new Date(alert.timestamp).toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="alert-card-main">
+                <h3 className="alert-main-title">{alert.title}</h3>
+                <p className="alert-description">{alert.description}</p>
+
+                {alert.prescribedAction && (
+                  <div className="action-required-callout">
+                    <strong className="callout-label">Prescribed Range Action:</strong>
+                    <span>{alert.prescribedAction}</span>
+                  </div>
+                )}
+
+                <div className="alert-footer-meta">
+                  <div className="meta-left">
+                    <div className="meta-tag">
+                      <MapPin size={12} className="text-forest" />
+                      <span>{alert.zone} Sector</span>
+                    </div>
+
+                    {alert.associatedTigerId && (
+                      <div className="meta-tag">
+                        <span className="tiger-sym">🐅</span>
+                        <span className="font-mono font-bold">
+                          {alert.associatedTigerId} {associatedTiger ? `(${associatedTiger.sex === 'FEMALE' ? 'Female' : 'Male'}, ${associatedTiger.primaryZone})` : ''}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  {alert.associatedTigerCode && (
-                    <div className="meta-tag">
-                      <span className="tiger-sym">🐅</span>
-                      <span>
-                        {alert.associatedTigerCode} ({alert.associatedTigerName})
-                      </span>
-                    </div>
-                  )}
-                </div>
+                  <div className="meta-actions">
+                    <Link to="/movement" className="tt-btn tt-btn-secondary btn-sm">
+                      <MapPin size={13} />
+                      <span>View on GIS Map</span>
+                    </Link>
 
-                <div className="meta-actions">
-                  <Link to="/movement" className="tt-btn tt-btn-ghost btn-sm">
-                    <MapPin size={14} />
-                    <span>View on GIS Map</span>
-                  </Link>
-
-                  <button
-                    className={`tt-btn ${alert.acknowledged ? 'tt-btn-secondary' : 'tt-btn-primary'} btn-sm`}
-                    onClick={() => toggleAcknowledge(alert.id)}
-                  >
-                    {alert.acknowledged ? (
-                      <>
-                        <CheckCircle size={14} />
-                        <span>Acknowledged</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send size={14} />
-                        <span>Acknowledge & Dispatch Unit</span>
-                      </>
-                    )}
-                  </button>
+                    <button
+                      className={`tt-btn ${alert.acknowledged ? 'tt-btn-secondary' : 'tt-btn-primary'} btn-sm`}
+                      onClick={() => toggleAcknowledge(alert.id)}
+                    >
+                      {alert.acknowledged ? (
+                        <>
+                          <CheckCircle2 size={13} />
+                          <span>Acknowledged</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={13} />
+                          <span>Acknowledge & Notify Beat Officer</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {filteredAlerts.length === 0 && (
           <div className="tt-card empty-alerts">
-            <CheckCircle size={36} className="text-forest" />
+            <CheckCircle2 size={32} className="text-forest" />
             <h3>No active alerts matching criteria</h3>
             <p>All forest sectors in the selected range are operating within normal baseline.</p>
           </div>
@@ -180,21 +206,27 @@ export const Alerts: React.FC = () => {
         .alerts-page {
           display: flex;
           flex-direction: column;
-          gap: 18px;
+          gap: 14px;
+        }
+
+        .banner-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .alerts-hero {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 22px 24px;
+          padding: 16px 20px;
         }
 
         @media (max-width: 768px) {
           .alerts-hero {
             flex-direction: column;
             align-items: flex-start;
-            gap: 14px;
+            gap: 12px;
           }
         }
 
@@ -203,55 +235,63 @@ export const Alerts: React.FC = () => {
           align-items: center;
           gap: 6px;
           font-family: var(--font-mono);
-          font-size: 11px;
-          font-weight: 600;
-          color: #f87171;
-          margin-bottom: 4px;
+          font-size: 10.5px;
+          font-weight: 700;
+          color: var(--status-critical-text);
+          margin-bottom: 2px;
         }
 
         .hero-title {
-          font-size: 20px;
-          margin-bottom: 4px;
+          font-size: 17px;
+          font-weight: 700;
+          margin-bottom: 2px;
         }
 
         .hero-desc {
-          font-size: 13px;
+          font-size: 12px;
           color: var(--text-secondary);
           max-width: 700px;
+          line-height: 1.4;
         }
 
         .stat-pill {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 10px 18px;
-          border-radius: var(--radius-md);
+          gap: 10px;
+          padding: 8px 14px;
+          border-radius: var(--radius-sm);
         }
 
         .stat-pill.red {
-          background: rgba(239, 68, 68, 0.15);
-          border: 1px solid rgba(239, 68, 68, 0.35);
-          color: #fca5a5;
+          background: #FEE2E2;
+          border: 1px solid #FECACA;
+          color: #991B1B;
+        }
+
+        .stat-pill.green {
+          background: #DCFCE7;
+          border: 1px solid #BBF7D0;
+          color: #166534;
         }
 
         .stat-pill .num {
-          font-size: 20px;
+          font-size: 18px;
           font-weight: 700;
           line-height: 1;
         }
 
         .stat-pill .lbl {
-          font-size: 11px;
+          font-size: 10.5px;
           color: var(--text-secondary);
-          margin-top: 2px;
+          margin-top: 1px;
         }
 
         .alert-filters-card {
-          padding: 14px 20px;
+          padding: 12px 16px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 16px;
+          gap: 14px;
           flex-wrap: wrap;
         }
 
@@ -260,73 +300,73 @@ export const Alerts: React.FC = () => {
           min-width: 260px;
           display: flex;
           align-items: center;
-          gap: 10px;
-          background: var(--bg-input);
+          gap: 8px;
+          background: var(--bg-surface-subtle);
           border: 1px solid var(--border-default);
           border-radius: var(--radius-sm);
-          padding: 6px 12px;
+          padding: 6px 10px;
         }
 
         .search-input {
           background: transparent;
           border: none;
           outline: none;
-          font-size: 13px;
+          font-size: 12px;
           color: var(--text-primary);
           width: 100%;
         }
 
         .severity-tabs {
           display: flex;
-          gap: 6px;
+          gap: 4px;
         }
 
         .sev-tab {
-          padding: 5px 12px;
-          border-radius: var(--radius-full);
-          font-size: 12px;
+          padding: 4px 10px;
+          border-radius: var(--radius-sm);
+          font-size: 11.5px;
           color: var(--text-secondary);
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid var(--border-subtle);
+          background: var(--bg-surface-subtle);
+          border: 1px solid var(--border-default);
           transition: all var(--transition-fast);
         }
 
         .sev-tab.active {
-          background: var(--bg-card-elevated);
-          color: #fff;
+          background: #FFFFFF;
+          color: var(--color-primary);
           font-weight: 600;
-          border-color: var(--border-default);
+          border-color: var(--border-active);
         }
 
         .alerts-list {
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 12px;
         }
 
         .alert-card {
-          padding: 18px 20px;
+          padding: 14px 16px;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 10px;
           transition: all var(--transition-fast);
         }
 
         .alert-card.high {
-          border-left: 4px solid #ef4444;
+          border-left: 3.5px solid #DC2626;
         }
 
         .alert-card.medium {
-          border-left: 4px solid #f59e0b;
+          border-left: 3.5px solid #D97706;
         }
 
         .alert-card.low {
-          border-left: 4px solid #38bdf8;
+          border-left: 3.5px solid #0284C7;
         }
 
         .alert-card.acknowledged {
-          opacity: 0.75;
-          background: rgba(14, 26, 22, 0.4);
+          opacity: 0.8;
+          background: #FAFBF9;
         }
 
         .alert-card-top {
@@ -338,50 +378,50 @@ export const Alerts: React.FC = () => {
         .alert-header-left {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
           flex-wrap: wrap;
         }
 
         .alert-id {
-          font-size: 11px;
+          font-size: 10.5px;
           color: var(--text-muted);
         }
 
         .alert-time-meta {
           display: flex;
           align-items: center;
-          gap: 5px;
-          font-size: 11px;
+          gap: 4px;
+          font-size: 10.5px;
           color: var(--text-muted);
         }
 
         .alert-main-title {
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 700;
           color: var(--text-primary);
-          margin-bottom: 4px;
+          margin-bottom: 2px;
         }
 
         .alert-description {
-          font-size: 13px;
+          font-size: 12px;
           color: var(--text-secondary);
-          line-height: 1.5;
+          line-height: 1.45;
         }
 
         .action-required-callout {
-          background: rgba(245, 158, 11, 0.08);
-          border: 1px solid rgba(245, 158, 11, 0.25);
+          background: #FEF3C7;
+          border: 1px solid #FDE68A;
           border-radius: var(--radius-sm);
-          padding: 8px 12px;
-          font-size: 12px;
-          color: #fde68a;
-          margin-top: 6px;
+          padding: 6px 10px;
+          font-size: 11.5px;
+          color: #92400E;
+          margin-top: 4px;
           display: flex;
           gap: 6px;
         }
 
         .callout-label {
-          color: var(--accent-tiger);
+          color: #78350F;
           flex-shrink: 0;
         }
 
@@ -390,7 +430,7 @@ export const Alerts: React.FC = () => {
           align-items: center;
           justify-content: space-between;
           flex-wrap: wrap;
-          gap: 12px;
+          gap: 10px;
           padding-top: 8px;
           border-top: 1px solid var(--border-subtle);
         }
@@ -399,22 +439,14 @@ export const Alerts: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 12px;
-          flex-wrap: wrap;
         }
 
         .meta-tag {
           display: flex;
           align-items: center;
-          gap: 5px;
-          font-size: 12px;
+          gap: 4px;
+          font-size: 11.5px;
           color: var(--text-secondary);
-          background: rgba(255, 255, 255, 0.04);
-          padding: 2px 8px;
-          border-radius: 4px;
-        }
-
-        .tiger-sym {
-          font-size: 12px;
         }
 
         .meta-actions {
@@ -423,14 +455,24 @@ export const Alerts: React.FC = () => {
           gap: 8px;
         }
 
+        .btn-sm {
+          padding: 4px 10px;
+          font-size: 11.5px;
+        }
+
         .empty-alerts {
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
-          padding: 40px;
-          gap: 8px;
+          padding: 28px;
+          gap: 6px;
         }
+
+        .text-forest { color: var(--color-primary); }
+        .text-danger { color: var(--status-critical-text); }
+        .font-mono { font-family: var(--font-mono); }
+        .font-bold { font-weight: 600; }
       `}</style>
     </div>
   );

@@ -2,56 +2,112 @@ import React, { useState } from 'react';
 import {
   UploadCloud,
   FileCheck,
-  Clock,
-  Filter,
   HardDrive,
-  Layers,
   ShieldCheck,
   Archive,
   AlertCircle,
-  Eye
+  Info,
+  CheckCircle2,
+  RefreshCw,
+  RotateCcw
 } from 'lucide-react';
 import { mockBatches, mockCameraTraps } from '../data/mockData';
+import type { CameraProcessingBatch } from '../types/tiger';
 
 export const CameraProcessing: React.FC = () => {
+  const [batches, setBatches] = useState<CameraProcessingBatch[]>(mockBatches);
   const [selectedStation, setSelectedStation] = useState('ALL');
+  const [activeTab, setActiveTab] = useState<'BATCHES' | 'QUARANTINE_LOG'>('BATCHES');
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
-  // Aggregated quarantine and screening metrics across active batches
-  const totalImgs = mockBatches.reduce((acc, b) => acc + b.totalImages, 0);
-  const totalBlank = mockBatches.reduce((acc, b) => acc + b.blankImages, 0);
-  const totalRetained = mockBatches.reduce((acc, b) => acc + b.imagesRetained, 0);
-  const totalQuarantined = mockBatches.reduce((acc, b) => acc + b.imagesQuarantined, 0);
-  const totalReview = mockBatches.reduce((acc, b) => acc + b.imagesRequiringReview, 0);
-  const totalTigers = mockBatches.reduce((acc, b) => acc + b.tigersDetected, 0);
+  // Aggregated screening and quarantine metrics
+  const totalImgs = batches.reduce((acc, b) => acc + b.totalImages, 0);
+  const totalBlank = batches.reduce((acc, b) => acc + b.blankImages, 0);
+  const totalRetained = batches.reduce((acc, b) => acc + b.imagesRetained, 0);
+  const totalQuarantined = batches.reduce((acc, b) => acc + b.imagesQuarantined, 0);
+  const totalReview = batches.reduce((acc, b) => acc + b.imagesRequiringReview, 0);
+  const totalTigers = batches.reduce((acc, b) => acc + b.tigersDetected, 0);
+
+  const handleSimulateUpload = () => {
+    const newBatch: CameraProcessingBatch = {
+      batchId: `BATCH-2026-0817-${String.fromCharCode(65 + batches.length)}`,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: 'Forester S. Meshram (Jamtara Beat)',
+      trapStation: selectedStation === 'ALL' ? 'Jamtara Southern Ridge (STN-JM-04)' : `Station ${selectedStation}`,
+      totalImages: 280,
+      blankImages: 160,
+      imagesRetained: 120,
+      imagesQuarantined: 160,
+      imagesRequiringReview: 6,
+      tigersDetected: 8,
+      status: 'EXTRACTING',
+      progressPercent: 35
+    };
+    setBatches([newBatch, ...batches]);
+    setFeedbackMsg(`Initiated ingestion of SD dump for ${newBatch.trapStation}. Reversible screening underway.`);
+    setTimeout(() => setFeedbackMsg(null), 5000);
+  };
+
+  const handleRestoreQuarantined = (batchId: string) => {
+    setBatches(prev => prev.map(b => {
+      if (b.batchId === batchId && b.imagesQuarantined > 0) {
+        return {
+          ...b,
+          imagesRetained: b.imagesRetained + 10,
+          imagesQuarantined: b.imagesQuarantined - 10,
+          imagesRequiringReview: b.imagesRequiringReview + 10
+        };
+      }
+      return b;
+    }));
+    setFeedbackMsg(`Restored 10 quarantined frames from ${batchId} to Image Review queue.`);
+    setTimeout(() => setFeedbackMsg(null), 4000);
+  };
 
   return (
     <div className="processing-page">
-      {/* Synthetic Processing Notice */}
+      {/* Synthetic Notice */}
       <div className="synthetic-banner">
-        <div className="banner-text">
-          <strong>Camera Trap Ingest Pipeline:</strong> Raw SD-card dumps are screened for empty/vegetation captures and routed to reversible quarantine storage before stripe extraction.
+        <div className="banner-left">
+          <Info size={14} className="text-forest" />
+          <span>
+            <strong>Camera Trap Screening & Ingest Pipeline:</strong> Raw SD-card dumps are screened for empty/vegetation captures and routed to reversible quarantine storage before biometric stripe extraction.
+          </span>
         </div>
         <span className="synthetic-tag">PROTOTYPE INGEST PIPELINE</span>
       </div>
+
+      {feedbackMsg && (
+        <div className="feedback-toast">
+          <CheckCircle2 size={14} />
+          <span>{feedbackMsg}</span>
+        </div>
+      )}
 
       {/* Overview Screening Metrics Cards */}
       <div className="metrics-summary-grid">
         <div className="tt-card metric-box">
           <span className="m-label">Total Ingested Images</span>
           <span className="m-val telemetry-num">{totalImgs}</span>
-          <span className="m-sub">Across 3 field batches</span>
+          <span className="m-sub">Across {batches.length} field SD batches</span>
+        </div>
+
+        <div className="tt-card metric-box">
+          <span className="m-label">Blank Trigger Frames</span>
+          <span className="m-val telemetry-num text-muted">{totalBlank}</span>
+          <span className="m-sub">{((totalBlank / totalImgs) * 100).toFixed(0)}% wind / foliage triggers</span>
         </div>
 
         <div className="tt-card metric-box">
           <span className="m-label">Images Retained (Fauna)</span>
           <span className="m-val text-forest telemetry-num">{totalRetained}</span>
-          <span className="m-sub">{((totalRetained / totalImgs) * 100).toFixed(0)}% valid detections</span>
+          <span className="m-sub">{((totalRetained / totalImgs) * 100).toFixed(0)}% valid fauna detections</span>
         </div>
 
         <div className="tt-card metric-box">
-          <span className="m-label">Quarantined Blanks (Reversible)</span>
+          <span className="m-label">Quarantined (Reversible)</span>
           <span className="m-val text-amber telemetry-num">{totalQuarantined}</span>
-          <span className="m-sub">Preserved in archive, no permanent deletion</span>
+          <span className="m-sub">Preserved in archive, zero permanent deletion</span>
         </div>
 
         <div className="tt-card metric-box">
@@ -62,8 +118,8 @@ export const CameraProcessing: React.FC = () => {
 
         <div className="tt-card metric-box">
           <span className="m-label">Tiger Detections Extracted</span>
-          <span className="m-val text-primary-highlight telemetry-num">{totalTigers}</span>
-          <span className="m-sub">Candidate matches populated</span>
+          <span className="m-val text-forest telemetry-num">{totalTigers}</span>
+          <span className="m-sub">Candidate matches indexed</span>
         </div>
       </div>
 
@@ -84,14 +140,15 @@ export const CameraProcessing: React.FC = () => {
               Select Camera-Trap Media Directory or ZIP File
             </div>
             <div className="dropzone-sub-text">
-              Exif metadata, camera ID headers, and camera timestamps will be indexed.
+              Exif metadata, camera station IDs, and camera timestamps will be indexed and screened.
             </div>
             <div className="dropzone-actions">
-              <button className="tt-btn tt-btn-primary">
-                <span>Select Folder from SD Card</span>
+              <button className="tt-btn tt-btn-primary" onClick={handleSimulateUpload}>
+                <UploadCloud size={14} />
+                <span>Simulate Ingest from SD Card</span>
               </button>
-              <button className="tt-btn tt-btn-secondary">
-                <span>Select Archive (.ZIP)</span>
+              <button className="tt-btn tt-btn-secondary" onClick={handleSimulateUpload}>
+                <span>Select ZIP Archive</span>
               </button>
             </div>
           </div>
@@ -128,7 +185,7 @@ export const CameraProcessing: React.FC = () => {
           <div className="tt-card-header">
             <h3 className="tt-card-title">
               <Archive size={16} className="text-forest" />
-              <span>Screening & Safe Quarantine Policy</span>
+              <span>Screening & Safe Reversible Quarantine Policy</span>
             </h3>
             <span className="badge badge-forest">Audit-Safe Storage</span>
           </div>
@@ -137,9 +194,9 @@ export const CameraProcessing: React.FC = () => {
             <div className="policy-item">
               <ShieldCheck size={16} className="text-forest policy-icon" />
               <div>
-                <strong>Reversible Quarantine Model</strong>
+                <strong>Reversible Quarantine Model (No Permanent Deletion)</strong>
                 <p>
-                  Images classified as empty blanks (wind triggers, vegetation movement) are placed in a quarantined folder with metadata tags. They are never permanently deleted and can be reviewed or restored at any point.
+                  Images classified as empty blanks (wind triggers, vegetation movement) are stored in an indexed quarantine archive with original Exif headers. They are never permanently deleted and can be inspected or restored at any time.
                 </p>
               </div>
             </div>
@@ -147,9 +204,9 @@ export const CameraProcessing: React.FC = () => {
             <div className="policy-item">
               <FileCheck size={16} className="text-forest policy-icon" />
               <div>
-                <strong>Metadata Preservation</strong>
+                <strong>Exif & Audit Trail Preservation</strong>
                 <p>
-                  Original capture timestamps, camera station serial numbers, and sequential frame indexes are retained verbatim for government wildlife census audits.
+                  Original capture timestamps, camera station serial numbers, and sequential frame indexes are retained verbatim for government wildlife monitoring audits and census verification.
                 </p>
               </div>
             </div>
@@ -159,7 +216,7 @@ export const CameraProcessing: React.FC = () => {
               <div>
                 <strong>Low-Confidence Frame Triage</strong>
                 <p>
-                  Obscured captures or partial flanks are tagged for human biologist inspection in the Image Review queue rather than auto-discarded.
+                  Obscured captures or partial flanks are automatically routed to the human biologist Image Review queue rather than auto-quarantined.
                 </p>
               </div>
             </div>
@@ -173,69 +230,131 @@ export const CameraProcessing: React.FC = () => {
           <div>
             <h3 className="tt-card-title">
               <HardDrive size={15} className="text-forest" />
-              <span>Batch Screening & Ingest Queues</span>
+              <span>Camera-Trap Batch Ingestion Log</span>
             </h3>
-            <p className="tt-card-subtitle">Dataset import progress by camera station and beat</p>
+            <p className="tt-card-subtitle">Dataset import screening and reversible quarantine tracking</p>
+          </div>
+
+          <div className="view-toggle-pills">
+            <button
+              className={`pill-btn ${activeTab === 'BATCHES' ? 'active' : ''}`}
+              onClick={() => setActiveTab('BATCHES')}
+            >
+              All Batches ({batches.length})
+            </button>
+            <button
+              className={`pill-btn ${activeTab === 'QUARANTINE_LOG' ? 'active' : ''}`}
+              onClick={() => setActiveTab('QUARANTINE_LOG')}
+            >
+              Quarantine Audit Log
+            </button>
           </div>
         </div>
 
-        <div className="batches-table-wrapper">
-          <table className="tt-table">
-            <thead>
-              <tr>
-                <th>Batch ID</th>
-                <th>Camera Station / Range</th>
-                <th>Uploaded By</th>
-                <th>Total Imgs</th>
-                <th>Retained (Fauna)</th>
-                <th>Quarantined Blanks</th>
-                <th>Tigers Found</th>
-                <th>Progress</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockBatches.map((b) => (
-                <tr key={b.batchId}>
-                  <td>
-                    <span className="batch-id-tag telemetry-num">{b.batchId}</span>
-                  </td>
-                  <td>
-                    <div className="station-title">{b.trapStation}</div>
-                    <div className="time-sub-tag">
-                      {new Date(b.uploadedAt).toLocaleDateString()} at {new Date(b.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </td>
-                  <td className="uploader-cell">{b.uploadedBy}</td>
-                  <td className="telemetry-num">{b.totalImages}</td>
-                  <td className="telemetry-num text-forest font-bold">{b.imagesRetained}</td>
-                  <td className="telemetry-num text-muted">{b.imagesQuarantined} (Reversible)</td>
-                  <td>
-                    <span className="badge badge-amber telemetry-num">
-                      {b.tigersDetected} Detections
-                    </span>
-                  </td>
-                  <td className="progress-cell">
-                    <div className="progress-bar-container">
-                      <div
-                        className={`progress-bar-fill ${b.status === 'COMPLETED' ? 'completed' : 'processing'}`}
-                        style={{ width: `${b.progressPercent}%` }}
-                      />
-                    </div>
-                    <span className="telemetry-num progress-pct">{b.progressPercent}%</span>
-                  </td>
-                  <td>
-                    {b.status === 'COMPLETED' ? (
-                      <span className="badge badge-forest">Completed</span>
-                    ) : (
-                      <span className="badge badge-blue">{b.status}</span>
-                    )}
-                  </td>
+        {activeTab === 'BATCHES' ? (
+          <div className="batches-table-wrapper">
+            <table className="tt-table">
+              <thead>
+                <tr>
+                  <th>Batch ID</th>
+                  <th>Camera Station / Range</th>
+                  <th>Uploaded By</th>
+                  <th>Total Imgs</th>
+                  <th>Retained (Fauna)</th>
+                  <th>Quarantined Blanks</th>
+                  <th>Review Queue</th>
+                  <th>Tigers Found</th>
+                  <th>Progress</th>
+                  <th>Status</th>
                 </tr>
+              </thead>
+              <tbody>
+                {batches.map((b) => (
+                  <tr key={b.batchId}>
+                    <td>
+                      <span className="batch-id-tag telemetry-num">{b.batchId}</span>
+                    </td>
+                    <td>
+                      <div className="station-title">{b.trapStation}</div>
+                      <div className="time-sub-tag">
+                        {new Date(b.uploadedAt).toLocaleDateString()} at {new Date(b.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </td>
+                    <td className="uploader-cell">{b.uploadedBy}</td>
+                    <td className="telemetry-num">{b.totalImages}</td>
+                    <td className="telemetry-num text-forest font-bold">{b.imagesRetained}</td>
+                    <td>
+                      <div className="quarantine-cell">
+                        <span className="telemetry-num text-muted">{b.imagesQuarantined}</span>
+                        <button
+                          className="restore-btn"
+                          title="Restore 10 sample frames from quarantine"
+                          onClick={() => handleRestoreQuarantined(b.batchId)}
+                        >
+                          <RotateCcw size={10} />
+                          <span>Restore</span>
+                        </button>
+                      </div>
+                    </td>
+                    <td className="telemetry-num text-info font-bold">{b.imagesRequiringReview}</td>
+                    <td>
+                      <span className="badge badge-amber telemetry-num">
+                        {b.tigersDetected} Detections
+                      </span>
+                    </td>
+                    <td className="progress-cell">
+                      <div className="progress-bar-container">
+                        <div
+                          className={`progress-bar-fill ${b.status === 'COMPLETED' ? 'completed' : 'processing'}`}
+                          style={{ width: `${b.progressPercent}%` }}
+                        />
+                      </div>
+                      <span className="telemetry-num progress-pct">{b.progressPercent}%</span>
+                    </td>
+                    <td>
+                      {b.status === 'COMPLETED' ? (
+                        <span className="badge badge-forest">Completed</span>
+                      ) : (
+                        <span className="badge badge-blue">
+                          <RefreshCw size={10} className="spin-icon" /> {b.status}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="quarantine-audit-view">
+            <div className="audit-header">
+              <Archive size={16} className="text-forest" />
+              <span>Archived Blank & Vegetation Captures (Reversible Storage)</span>
+            </div>
+            <div className="quarantine-cards-grid">
+              {batches.map(b => (
+                <div key={b.batchId} className="quarantine-card">
+                  <div className="q-head">
+                    <span className="font-mono font-bold">{b.batchId}</span>
+                    <span className="badge badge-subtle">{b.imagesQuarantined} Frames Quarantined</span>
+                  </div>
+                  <div className="q-station">{b.trapStation}</div>
+                  <div className="q-details">
+                    <div>Reason: Vegetation sway & heat triggers without fauna pixels</div>
+                    <div>Integrity: 100% Exif preserved in cold archive</div>
+                  </div>
+                  <button
+                    className="tt-btn tt-btn-secondary btn-sm"
+                    onClick={() => handleRestoreQuarantined(b.batchId)}
+                  >
+                    <RotateCcw size={12} />
+                    <span>Restore Samples to Review Queue</span>
+                  </button>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -245,21 +364,40 @@ export const CameraProcessing: React.FC = () => {
           gap: 14px;
         }
 
+        .banner-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .feedback-toast {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #DCFCE7;
+          border: 1px solid #BBF7D0;
+          color: #166534;
+          padding: 8px 14px;
+          border-radius: var(--radius-sm);
+          font-size: 12px;
+          font-weight: 500;
+        }
+
         .metrics-summary-grid {
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
+          grid-template-columns: repeat(6, 1fr);
           gap: 12px;
         }
 
-        @media (max-width: 1100px) {
+        @media (max-width: 1200px) {
           .metrics-summary-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
           }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 680px) {
           .metrics-summary-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, 1fr);
           }
         }
 
@@ -267,11 +405,11 @@ export const CameraProcessing: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 3px;
-          padding: 14px;
+          padding: 12px 14px;
         }
 
         .m-label {
-          font-size: 11px;
+          font-size: 10.5px;
           color: var(--text-muted);
           font-weight: 500;
         }
@@ -280,49 +418,60 @@ export const CameraProcessing: React.FC = () => {
           font-size: 22px;
           font-weight: 700;
           color: var(--text-primary);
-          line-height: 1.2;
+          line-height: 1.15;
         }
 
         .m-sub {
-          font-size: 10.5px;
+          font-size: 10px;
           color: var(--text-muted);
           margin-top: 2px;
         }
 
-        .text-forest { color: var(--color-primary); }
-        .text-amber { color: #B45309; }
-        .text-info { color: #0284C7; }
-        .text-primary-highlight { color: #15803D; font-weight: 700; }
-        .font-bold { font-weight: 600; }
+        .grid-2 {
+          display: grid;
+          grid-template-columns: 1.2fr 1fr;
+          gap: 14px;
+        }
+
+        @media (max-width: 900px) {
+          .grid-2 {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .upload-card {
+          display: flex;
+          flex-direction: column;
+        }
 
         .dropzone-box {
           border: 1.5px dashed var(--border-default);
           border-radius: var(--radius-sm);
           background: var(--bg-surface-subtle);
-          padding: 24px 16px;
+          padding: 20px 16px;
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
-          margin-bottom: 14px;
+          margin-bottom: 12px;
         }
 
         .dropzone-icon {
           color: var(--color-primary);
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
 
         .dropzone-main-text {
-          font-size: 13px;
+          font-size: 12.5px;
           font-weight: 600;
           color: var(--text-primary);
-          margin-bottom: 3px;
+          margin-bottom: 2px;
         }
 
         .dropzone-sub-text {
-          font-size: 11.5px;
+          font-size: 11px;
           color: var(--text-muted);
-          margin-bottom: 14px;
+          margin-bottom: 12px;
         }
 
         .dropzone-actions {
@@ -364,7 +513,7 @@ export const CameraProcessing: React.FC = () => {
         .policy-items-list {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 10px;
         }
 
         .policy-item {
@@ -384,7 +533,7 @@ export const CameraProcessing: React.FC = () => {
 
         .policy-item strong {
           color: var(--text-primary);
-          font-size: 12px;
+          font-size: 11.5px;
         }
 
         .policy-item p {
@@ -394,20 +543,45 @@ export const CameraProcessing: React.FC = () => {
           line-height: 1.4;
         }
 
+        .view-toggle-pills {
+          display: flex;
+          gap: 4px;
+          background: var(--bg-surface-subtle);
+          padding: 3px;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--border-default);
+        }
+
+        .pill-btn {
+          padding: 3px 8px;
+          border-radius: var(--radius-sm);
+          font-size: 11px;
+          color: var(--text-secondary);
+          transition: all var(--transition-fast);
+        }
+
+        .pill-btn.active {
+          background: #FFFFFF;
+          color: var(--color-primary);
+          font-weight: 600;
+          border: 1px solid var(--border-default);
+        }
+
+        .batches-table-wrapper {
+          overflow-x: auto;
+        }
+
         .batch-id-tag {
           font-family: var(--font-mono);
           font-size: 11px;
           font-weight: 600;
-          color: var(--text-primary);
-          background: var(--bg-surface-subtle);
-          padding: 1px 5px;
-          border-radius: 3px;
-          border: 1px solid var(--border-default);
+          color: var(--color-primary);
         }
 
         .station-title {
           font-weight: 600;
           color: var(--text-primary);
+          font-size: 12px;
         }
 
         .time-sub-tag {
@@ -417,26 +591,52 @@ export const CameraProcessing: React.FC = () => {
 
         .uploader-cell {
           font-size: 11.5px;
+          color: var(--text-secondary);
         }
 
-        .progress-cell {
+        .quarantine-cell {
           display: flex;
           align-items: center;
           gap: 6px;
+        }
+
+        .restore-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          font-size: 9.5px;
+          padding: 1px 4px;
+          background: #F0F4F1;
+          border: 1px solid #DCE5DF;
+          border-radius: 2px;
+          color: var(--text-secondary);
+          transition: all var(--transition-fast);
+        }
+
+        .restore-btn:hover {
+          background: #E8F2EC;
+          color: var(--color-primary);
+          border-color: var(--border-active);
+        }
+
+        .progress-cell {
           min-width: 110px;
         }
 
         .progress-bar-container {
-          flex: 1;
-          height: 5px;
-          background: var(--border-default);
-          border-radius: 3px;
+          width: 100%;
+          height: 6px;
+          background: var(--bg-surface-subtle);
+          border-radius: var(--radius-full);
           overflow: hidden;
+          margin-bottom: 2px;
+          border: 1px solid var(--border-subtle);
         }
 
         .progress-bar-fill {
           height: 100%;
-          border-radius: 3px;
+          border-radius: var(--radius-full);
+          transition: width 300ms ease;
         }
 
         .progress-bar-fill.completed {
@@ -444,14 +644,83 @@ export const CameraProcessing: React.FC = () => {
         }
 
         .progress-bar-fill.processing {
-          background: #3B82F6;
+          background: #0284C7;
         }
 
         .progress-pct {
-          font-size: 10.5px;
+          font-size: 10px;
           color: var(--text-muted);
-          min-width: 26px;
         }
+
+        .spin-icon {
+          animation: spin 1.5s linear infinite;
+        }
+
+        @keyframes spin {
+          100% { transform: rotate(360deg); }
+        }
+
+        .quarantine-audit-view {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          padding-top: 4px;
+        }
+
+        .audit-header {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+
+        .quarantine-cards-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+        }
+
+        @media (max-width: 900px) {
+          .quarantine-cards-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .quarantine-card {
+          background: var(--bg-surface-subtle);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-sm);
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .q-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .q-station {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+
+        .q-details {
+          font-size: 11px;
+          color: var(--text-secondary);
+          line-height: 1.4;
+        }
+
+        .text-forest { color: var(--color-primary); }
+        .text-amber { color: #9A3412; }
+        .text-info { color: #0284C7; }
+        .font-bold { font-weight: 600; }
+        .font-mono { font-family: var(--font-mono); }
       `}</style>
     </div>
   );
