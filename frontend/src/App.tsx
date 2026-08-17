@@ -8,6 +8,7 @@ import Tigers from './pages/Tigers';
 import TigerDetails from './pages/TigerDetails';
 import MovementMap from './pages/MovementMap';
 import Alerts from './pages/Alerts';
+import LiveCameraFeeds from './pages/LiveCameraFeeds';
 
 export const App: React.FC = () => {
   return (
@@ -19,6 +20,7 @@ export const App: React.FC = () => {
           
           {/* Main monitoring routes */}
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="live-feeds" element={<LiveCameraFeeds />} />
           <Route path="camera-processing" element={<CameraProcessing />} />
           <Route path="image-review" element={<ImageReview />} />
           <Route path="tigers" element={<Tigers />} />

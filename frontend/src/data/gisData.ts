@@ -412,3 +412,83 @@ export const NEARBY_VILLAGES: VillageBoundary[] = [
     ]
   }
 ];
+
+// ----------------------------------------------------------------------
+// 4. 5 EDGE PERIMETER CAMERAS (Inside Pench Border, Near Villages)
+// ----------------------------------------------------------------------
+export interface EdgeCameraConfig {
+  id: string;
+  code: string;
+  name: string;
+  zone: string;
+  lat: number;
+  lng: number;
+  nearbyVillage: string;
+  distanceToVillageMeters: number;
+  facingDirection: string;
+  status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE_REQUIRED';
+}
+
+export const EDGE_CAMERA_CONFIGS: EdgeCameraConfig[] = [
+  {
+    id: 'CAM-EDGE-01',
+    code: 'CAM-EDGE-01',
+    name: 'Turia-Kohka Perimeter Watch (CAM-EDGE-01)',
+    zone: 'Turia',
+    lat: 21.7140,
+    lng: 79.3080,
+    nearbyVillage: 'Turia & Kohka Villages',
+    distanceToVillageMeters: 380,
+    facingDirection: 'South-West (Village Agricultural Edge)',
+    status: 'ONLINE'
+  },
+  {
+    id: 'CAM-EDGE-02',
+    code: 'CAM-EDGE-02',
+    name: 'Khursapar Buffer Ridge Station (CAM-EDGE-02)',
+    zone: 'Khursapar',
+    lat: 21.6260,
+    lng: 79.2680,
+    nearbyVillage: 'Khursapar Village',
+    distanceToVillageMeters: 420,
+    facingDirection: 'West (Maharashtra Boundary Ridge)',
+    status: 'ONLINE'
+  },
+  {
+    id: 'CAM-EDGE-03',
+    code: 'CAM-EDGE-03',
+    name: 'Sillari Maharashtra Border Edge (CAM-EDGE-03)',
+    zone: 'Buffer Area',
+    lat: 21.5930,
+    lng: 79.3080,
+    nearbyVillage: 'Sillari Village',
+    distanceToVillageMeters: 310,
+    facingDirection: 'South (Sillari Entry Corridor)',
+    status: 'ONLINE'
+  },
+  {
+    id: 'CAM-EDGE-04',
+    code: 'CAM-EDGE-04',
+    name: 'Jamtara East Escarpment Station (CAM-EDGE-04)',
+    zone: 'Jamtara',
+    lat: 21.6920,
+    lng: 79.4180,
+    nearbyVillage: 'Jamtara Village',
+    distanceToVillageMeters: 450,
+    facingDirection: 'East (Chhindwara Border Fringe)',
+    status: 'ONLINE'
+  },
+  {
+    id: 'CAM-EDGE-05',
+    code: 'CAM-EDGE-05',
+    name: 'Rukhad Corridor Outpost (CAM-EDGE-05)',
+    zone: 'Rukhad',
+    lat: 21.8780,
+    lng: 79.4280,
+    nearbyVillage: 'Rukhad Village',
+    distanceToVillageMeters: 390,
+    facingDirection: 'North-East (NH-44 Wildlife Corridor)',
+    status: 'ONLINE'
+  }
+];
+

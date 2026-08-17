@@ -54,9 +54,7 @@ export const CameraProcessing: React.FC = () => {
   const loadBatches = async () => {
     try {
       const data = await tigerService.getProcessingBatches();
-      if (data && data.length > 0) {
-        setBatches(data);
-      }
+      setBatches(data || []);
     } catch (err) {
       console.error('Failed to load processing batches:', err);
     }
@@ -65,6 +63,32 @@ export const CameraProcessing: React.FC = () => {
   useEffect(() => {
     loadBatches();
   }, []);
+
+  const handleResetBatches = async () => {
+    try {
+      await tigerService.resetProcessingBatches();
+      setBatches([]);
+      setFeedbackMsg('All batch logs cleared. Counters reset to 0.');
+      setTimeout(() => setFeedbackMsg(null), 4000);
+    } catch (err) {
+      console.error('Failed to reset batches:', err);
+    }
+  };
+
+  const handleSeedBatches = async () => {
+    try {
+      const res = await tigerService.seedProcessingBatches();
+      if (res.batches) {
+        setBatches(res.batches);
+      } else {
+        loadBatches();
+      }
+      setFeedbackMsg('Demo field batches loaded.');
+      setTimeout(() => setFeedbackMsg(null), 4000);
+    } catch (err) {
+      console.error('Failed to seed batches:', err);
+    }
+  };
 
   // Poll live stream telemetry when session is active
   useEffect(() => {
@@ -492,7 +516,7 @@ export const CameraProcessing: React.FC = () => {
             <span className="card-subtitle">Dataset import screening and reversible quarantine tracking</span>
           </div>
 
-          <div className="filter-pill-group">
+          <div className="filter-pill-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               className={`filter-pill ${activeTab === 'BATCHES' ? 'active' : ''}`}
               onClick={() => setActiveTab('BATCHES')}
@@ -504,6 +528,24 @@ export const CameraProcessing: React.FC = () => {
               onClick={() => setActiveTab('QUARANTINE_LOG')}
             >
               Quarantine Audit Log
+            </button>
+            <button
+              className="tt-btn tt-btn-secondary btn-sm"
+              onClick={handleResetBatches}
+              title="Reset all batch logs and counters to 0"
+              style={{ fontSize: '11px', padding: '4px 10px' }}
+            >
+              <RotateCcw size={12} />
+              <span>Reset Logs (0)</span>
+            </button>
+            <button
+              className="tt-btn tt-btn-secondary btn-sm"
+              onClick={handleSeedBatches}
+              title="Load demo sample batches"
+              style={{ fontSize: '11px', padding: '4px 10px' }}
+            >
+              <RefreshCw size={12} />
+              <span>Seed Demo Data</span>
             </button>
           </div>
         </div>
@@ -526,43 +568,55 @@ export const CameraProcessing: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {displayedBatches.map((b) => (
-                <tr key={b.batchId}>
-                  <td className="font-mono batch-id-cell">{b.batchId}</td>
-                  <td>{b.trapStation}</td>
-                  <td className="uploaded-by-cell">{b.uploadedBy}</td>
-                  <td className="num-col telemetry-num">{b.totalImages}</td>
-                  <td className="num-col telemetry-num text-forest font-semibold">{b.imagesRetained}</td>
-                  <td className="num-col telemetry-num text-amber">{b.imagesQuarantined}</td>
-                  <td className="num-col telemetry-num">{b.imagesRequiringReview}</td>
-                  <td className="num-col telemetry-num font-semibold">
-                    <span className="tiger-count-badge">{b.tigersDetected}</span>
-                  </td>
-                  <td className="progress-cell">
-                    <div className="mini-progress-bar">
-                      <div
-                        className="mini-progress-fill"
-                        style={{ width: `${b.progressPercent}%` }}
-                      />
+              {displayedBatches.length === 0 ? (
+                <tr>
+                  <td colSpan={activeTab === 'QUARANTINE_LOG' ? 11 : 10} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                    <HardDrive size={24} style={{ margin: '0 auto 8px', opacity: 0.5, display: 'block' }} />
+                    <div style={{ fontWeight: 500 }}>No camera-trap batches ingested yet (0 total).</div>
+                    <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>
+                      Upload a field video (.mp4/.webm) or camera SD card dump above to begin screening and Re-ID.
                     </div>
                   </td>
-                  <td>
-                    <span className="badge badge-forest">Completed</span>
-                  </td>
-                  {activeTab === 'QUARANTINE_LOG' && (
-                    <td>
-                      <button
-                        className="tt-btn tt-btn-secondary btn-sm"
-                        onClick={() => handleRestoreQuarantined(b.batchId)}
-                        title="Restore 10 quarantined frames back to review queue"
-                      >
-                        <RotateCcw size={12} />
-                        <span>Restore</span>
-                      </button>
-                    </td>
-                  )}
                 </tr>
-              ))}
+              ) : (
+                displayedBatches.map((b) => (
+                  <tr key={b.batchId}>
+                    <td className="font-mono batch-id-cell">{b.batchId}</td>
+                    <td>{b.trapStation}</td>
+                    <td className="uploaded-by-cell">{b.uploadedBy}</td>
+                    <td className="num-col telemetry-num">{b.totalImages}</td>
+                    <td className="num-col telemetry-num text-forest font-semibold">{b.imagesRetained}</td>
+                    <td className="num-col telemetry-num text-amber">{b.imagesQuarantined}</td>
+                    <td className="num-col telemetry-num">{b.imagesRequiringReview}</td>
+                    <td className="num-col telemetry-num font-semibold">
+                      <span className="tiger-count-badge">{b.tigersDetected}</span>
+                    </td>
+                    <td className="progress-cell">
+                      <div className="mini-progress-bar">
+                        <div
+                          className="mini-progress-fill"
+                          style={{ width: `${b.progressPercent}%` }}
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      <span className="badge badge-forest">Completed</span>
+                    </td>
+                    {activeTab === 'QUARANTINE_LOG' && (
+                      <td>
+                        <button
+                          className="tt-btn tt-btn-secondary btn-sm"
+                          onClick={() => handleRestoreQuarantined(b.batchId)}
+                          title="Restore 10 quarantined frames back to review queue"
+                        >
+                          <RotateCcw size={12} />
+                          <span>Restore</span>
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

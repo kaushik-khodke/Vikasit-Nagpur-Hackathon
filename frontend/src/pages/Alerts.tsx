@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -12,11 +12,28 @@ import {
 } from 'lucide-react';
 import { mockAlerts, mockTigers } from '../data/mockData';
 import type { AlertSeverity, AlertItem } from '../types/tiger';
+import { tigerService } from '../service/api';
 
 export const Alerts: React.FC = () => {
   const [alertsState, setAlertsState] = useState<AlertItem[]>(mockAlerts);
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const loadAlerts = async () => {
+      try {
+        const data = await tigerService.getAlerts();
+        if (data && data.length > 0) {
+          setAlertsState(data);
+        }
+      } catch (err) {
+        console.error('Failed to load alerts:', err);
+      }
+    };
+    loadAlerts();
+    const interval = setInterval(loadAlerts, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const toggleAcknowledge = (id: string) => {
     setAlertsState((prev) =>

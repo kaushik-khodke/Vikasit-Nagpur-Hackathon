@@ -9,7 +9,6 @@ import {
   Eye,
   CheckCircle2,
   Database,
-  Info,
   Radio,
   Zap,
   Play,
@@ -18,10 +17,7 @@ import {
   Signal,
   TrendingUp,
   Sliders,
-  ChevronRight,
-  Bell,
-  Layers,
-  Sparkles
+  ChevronRight
 } from 'lucide-react';
 import { tigerService } from '../service/api';
 import { mockTigers, mockSightings, mockAlerts, mockCameraTraps } from '../data/mockData';
@@ -162,12 +158,25 @@ export const Dashboard: React.FC = () => {
         if (tList && tList.length > 0) setTigers(tList);
         if (sList && sList.length > 0) setSightings(sList);
         if (aList && aList.length > 0) setAlerts(aList);
-        if (cList && cList.length > 0) setCameras(cList);
+
+        const alertStationIds = new Set(
+          (aList || []).filter(a => !a.acknowledged).map(a => a.associatedCameraId || (a as any).stationId)
+        );
+
+        if (cList && cList.length > 0) {
+          const mappedCams = cList.map(c => ({
+            ...c,
+            hasActiveAlert: alertStationIds.has(c.id) || alertStationIds.has(c.code) || c.hasActiveAlert
+          }));
+          setCameras(mappedCams);
+        }
       } catch (err) {
         console.warn('Using mock telemetry for dashboard:', err);
       }
     };
     fetchDashboardData();
+    const interval = setInterval(fetchDashboardData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // Function to inject a dynamic live detection event

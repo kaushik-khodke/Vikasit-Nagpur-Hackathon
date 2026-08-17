@@ -32,11 +32,57 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-// Custom DivIcon for Camera Trap Stations
-const createCameraIcon = (status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE_REQUIRED') => {
-  const isOnline = status === 'ONLINE';
-  const isMaint = status === 'MAINTENANCE_REQUIRED';
-  const bg = isOnline ? '#1B5E3C' : isMaint ? '#D97706' : '#DC2626';
+// Custom DivIcon for Camera Trap Stations & Edge Perimeter Alarms
+const createCameraIcon = (camera: CameraTrap) => {
+  const isOnline = camera.status === 'ONLINE';
+  const isMaint = camera.status === 'MAINTENANCE_REQUIRED';
+  const isEdge = camera.isEdgeCamera;
+  const hasAlert = camera.hasActiveAlert;
+
+  if (hasAlert) {
+    return L.divIcon({
+      className: 'custom-map-icon',
+      html: `
+        <div class="edge-alert-map-marker" style="
+          position: relative;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        " title="🚨 PERIMETER TIGER ALERT - ${camera.name}">
+          <div style="
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px solid #EF4444;
+            background: rgba(239, 68, 68, 0.35);
+            animation: mapRadarPing 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+          "></div>
+          <div style="
+            background-color: #DC2626;
+            color: #FFFFFF;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #FFFFFF;
+            box-shadow: 0 0 14px #EF4444;
+            font-size: 14px;
+            z-index: 2;
+          ">🚨</div>
+        </div>
+      `,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -18]
+    });
+  }
+
+  const bg = isEdge ? '#0284C7' : (isOnline ? '#1B5E3C' : isMaint ? '#D97706' : '#DC2626');
+  const iconChar = isEdge ? '🛡️' : '📷';
 
   return L.divIcon({
     className: 'custom-map-icon',
@@ -44,19 +90,19 @@ const createCameraIcon = (status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE_REQUIRED')
       <div style="
         background-color: ${bg};
         color: #FFFFFF;
-        width: 26px;
-        height: 26px;
-        border-radius: 6px;
+        width: ${isEdge ? '28px' : '26px'};
+        height: ${isEdge ? '28px' : '26px'};
+        border-radius: ${isEdge ? '50%' : '6px'};
         display: flex;
         align-items: center;
         justify-content: center;
         border: 2px solid #FFFFFF;
         box-shadow: 0 3px 8px rgba(0,0,0,0.5);
-        font-size: 12px;
-      " title="Camera Trap Station">📷</div>
+        font-size: ${isEdge ? '13px' : '12px'};
+      " title="${isEdge ? 'Edge Perimeter Camera' : 'Camera Trap Station'} - ${camera.name}">${iconChar}</div>
     `,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
     popupAnchor: [0, -15]
   });
 };
@@ -497,6 +543,7 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
 
         {/* Home Range Territory Polygons */}
         {showPolygons && tigers.map((tiger, idx) => {
+          if (!tiger.homeRange?.polygonCoordinates || tiger.homeRange.polygonCoordinates.length === 0) return null;
           const color = polygonPalette[idx % polygonPalette.length];
           const isSelected = selectedTigerId === tiger.id;
 
@@ -521,15 +568,15 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
                   <div className="popup-body">
                     <div className="popup-stat-row">
                       <span className="lbl">Estimated Range:</span>
-                      <span className="val">{tiger.homeRange.areaSqKm} km²</span>
+                      <span className="val">{tiger.homeRange?.areaSqKm || 20} km²</span>
                     </div>
                     <div className="popup-stat-row">
                       <span className="lbl">Observations:</span>
-                      <span className="val">{tiger.detectionCount} captures</span>
+                      <span className="val">{tiger.detectionCount || (tiger.detections || []).length} captures</span>
                     </div>
                     <div className="popup-stat-row">
                       <span className="lbl">Status:</span>
-                      <span className="val">{tiger.activityStatus.replace(/_/g, ' ')}</span>
+                      <span className="val">{(tiger.activityStatus || 'ACTIVE_RESIDENT').replace(/_/g, ' ')}</span>
                     </div>
                     <div className="popup-notice">
                       * Synthetic estimate generated from camera-trap array sightings.
@@ -543,9 +590,10 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
 
         {/* Movement Polylines (Observed paths connecting camera detections) */}
         {showPaths && tigers.map((tiger) => {
-          if (tiger.detections.length < 2) return null;
+          const detections = tiger.detections || [];
+          if (detections.length < 2) return null;
           const isSelected = selectedTigerId === tiger.id;
-          const pathCoords: [number, number][] = tiger.detections.map(d => [d.location.lat, d.location.lng]);
+          const pathCoords: [number, number][] = detections.map(d => [d.location.lat, d.location.lng]);
 
           return (
             <Polyline
@@ -563,7 +611,7 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
 
         {/* Tiger Detection Locations */}
         {tigers.map((tiger) =>
-          tiger.detections.map((detection) => {
+          (tiger.detections || []).map((detection) => {
             const isSelected = selectedTigerId === tiger.id;
 
             return (
@@ -615,21 +663,36 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           <Marker
             key={camera.id}
             position={[camera.lat, camera.lng]}
-            icon={createCameraIcon(camera.status)}
+            icon={createCameraIcon(camera)}
           >
             <Popup>
               <div className="tt-map-popup">
                 <div className="popup-header-row">
-                  <span className="popup-station-badge">STATION {camera.code}</span>
-                  <span className={`popup-status-badge ${camera.status.toLowerCase()}`}>
-                    {camera.status}
+                  <span className={`popup-station-badge ${camera.isEdgeCamera ? 'edge-station-badge' : ''}`}>
+                    {camera.isEdgeCamera ? 'PERIMETER EDGE' : 'STATION'} {camera.code}
+                  </span>
+                  <span className={`popup-status-badge ${camera.hasActiveAlert ? 'alert-active' : camera.status.toLowerCase()}`}>
+                    {camera.hasActiveAlert ? '🚨 TIGER ALERT' : camera.status}
                   </span>
                 </div>
                 <div className="popup-station-name">{camera.name}</div>
                 <div className="popup-body">
+                  {camera.isEdgeCamera && camera.nearbyVillage && (
+                    <div className="popup-village-proximity-strip" style={{
+                      background: camera.hasActiveAlert ? 'rgba(239, 68, 68, 0.15)' : 'rgba(2, 132, 199, 0.12)',
+                      border: camera.hasActiveAlert ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(2, 132, 199, 0.3)',
+                      padding: '5px 8px',
+                      borderRadius: '4px',
+                      marginBottom: '8px',
+                      fontSize: '11px',
+                      color: camera.hasActiveAlert ? '#FCA5A5' : '#7DD3FC'
+                    }}>
+                      <strong>🏡 Adjacent Settlement:</strong> {camera.nearbyVillage} (~{camera.distanceToVillageMeters || 350}m from boundary)
+                    </div>
+                  )}
                   <div className="popup-stat-row">
                     <span className="lbl">Forest Range:</span>
-                    <span className="val">{camera.zone}</span>
+                    <span className="val">{camera.zone} Sector</span>
                   </div>
                   <div className="popup-stat-row">
                     <span className="lbl">Tigers Observed:</span>
@@ -643,6 +706,26 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
                     <span className="lbl">Last Service:</span>
                     <span className="val">{camera.lastServiceDate}</span>
                   </div>
+
+                  {camera.isEdgeCamera && (
+                    <a
+                      href="/live-feeds"
+                      className="tt-btn tt-btn-primary btn-sm"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        marginTop: '10px',
+                        padding: '6px 10px',
+                        textDecoration: 'none',
+                        fontSize: '11px',
+                        fontWeight: 600
+                      }}
+                    >
+                      <span>📹 Open Live 5-Camera Feed</span>
+                    </a>
+                  )}
                 </div>
               </div>
             </Popup>
@@ -651,6 +734,28 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
       </MapContainer>
 
       <style>{`
+        @keyframes mapRadarPing {
+          0% {
+            transform: scale(0.9);
+            opacity: 0.9;
+          }
+          100% {
+            transform: scale(2.2);
+            opacity: 0;
+          }
+        }
+
+        .edge-station-badge {
+          background: #0284C7 !important;
+          color: #FFFFFF !important;
+        }
+
+        .popup-status-badge.alert-active {
+          background: #DC2626 !important;
+          color: #FFFFFF !important;
+          animation: pulse 1s infinite;
+        }
+
         .reserve-map-wrapper {
           width: 100%;
           border-radius: var(--radius-md);

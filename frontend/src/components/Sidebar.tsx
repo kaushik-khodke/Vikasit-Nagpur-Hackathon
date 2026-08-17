@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
+  Radio,
   Camera,
   Images,
   Database,
@@ -60,6 +61,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       path: '/dashboard',
       icon: LayoutDashboard,
       badge: null
+    },
+    {
+      name: 'Live Edge Feeds',
+      path: '/live-feeds',
+      icon: Radio,
+      badge: '5 Feeds',
+      badgeVariant: 'warning' as const
     },
     {
       name: 'Camera Trap Processing',

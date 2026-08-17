@@ -62,6 +62,7 @@ export interface Sighting {
   location: SpatialCoordinate;
   flankSide: 'LEFT' | 'RIGHT' | 'BOTH' | 'UNCERTAIN';
   thumbnailUrl: string;
+  candidateBaselineUrl?: string;
   environmentalConditions?: {
     timeOfDay: 'DAY' | 'NIGHT' | 'DUSK' | 'DAWN';
     weather: string;
@@ -80,6 +81,15 @@ export interface CameraTrap {
   lastServiceDate: string;
   totalCapturesRecorded: number;
   tigersObservedCount: number;
+  isEdgeCamera?: boolean;
+  nearbyVillage?: string;
+  distanceToVillageMeters?: number;
+  hasActiveAlert?: boolean;
+  activeAlertDetails?: {
+    tigerId?: string;
+    confidence?: number;
+    timestamp?: string;
+  };
 }
 
 export type AlertSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -101,8 +111,9 @@ export interface AlertItem {
   zone: ReserveZone;
   location?: SpatialCoordinate;
   associatedTigerId?: string;
+  associatedCameraId?: string;
   acknowledged: boolean;
-  prescribedAction: string;
+  prescribedAction?: string;
 }
 
 export interface CameraProcessingBatch {
