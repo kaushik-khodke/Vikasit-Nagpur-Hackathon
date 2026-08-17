@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Archive,
   AlertCircle,
-  Info,
   CheckCircle2,
   RefreshCw,
   RotateCcw
@@ -66,17 +65,6 @@ export const CameraProcessing: React.FC = () => {
 
   return (
     <div className="processing-page">
-      {/* Synthetic Notice */}
-      <div className="synthetic-banner">
-        <div className="banner-left">
-          <Info size={14} className="text-forest" />
-          <span>
-            <strong>Camera Trap Screening & Ingest Pipeline:</strong> Raw SD-card dumps are screened for empty/vegetation captures and routed to reversible quarantine storage before biometric stripe extraction.
-          </span>
-        </div>
-        <span className="synthetic-tag">PROTOTYPE INGEST PIPELINE</span>
-      </div>
-
       {feedbackMsg && (
         <div className="feedback-toast">
           <CheckCircle2 size={14} />

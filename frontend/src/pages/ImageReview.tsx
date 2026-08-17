@@ -12,7 +12,8 @@ import {
   Thermometer,
   Search,
   Info,
-  Check
+  Check,
+  X
 } from 'lucide-react';
 import { mockSightings, mockTigers } from '../data/mockData';
 import type { Sighting } from '../types/tiger';
@@ -21,15 +22,32 @@ export const ImageReview: React.FC = () => {
   const [sightingsState, setSightingsState] = useState<Sighting[]>(mockSightings);
   const [selectedSightingId, setSelectedSightingId] = useState<string>(mockSightings[0].id);
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'VERIFIED'>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
-  const selectedSighting = sightingsState.find(s => s.id === selectedSightingId) || sightingsState[0];
-
   const filteredSightings = sightingsState.filter((s) => {
-    if (activeFilter === 'PENDING') return s.reviewStatus === 'PENDING_REVIEW';
-    if (activeFilter === 'VERIFIED') return s.reviewStatus === 'VERIFIED';
+    // Filter by tab
+    if (activeFilter === 'PENDING' && s.reviewStatus !== 'PENDING_REVIEW') return false;
+    if (activeFilter === 'VERIFIED' && s.reviewStatus !== 'VERIFIED') return false;
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchCandidate = s.topCandidateId?.toLowerCase().includes(q);
+      const matchCapture = s.captureId?.toLowerCase().includes(q);
+      const matchStation = s.cameraTrapName?.toLowerCase().includes(q);
+      const matchZone = s.zone?.toLowerCase().includes(q);
+      const matchFlank = s.flankSide?.toLowerCase().includes(q);
+      const matchStatus = s.reviewStatus?.toLowerCase().includes(q);
+      return matchCandidate || matchCapture || matchStation || matchZone || matchFlank || matchStatus;
+    }
     return true;
   });
+
+  const selectedSighting =
+    filteredSightings.find(s => s.id === selectedSightingId) ||
+    filteredSightings[0] ||
+    sightingsState[0];
 
   const topCandidateTiger = mockTigers.find((t) => t.id === selectedSighting.topCandidateId);
   const secondCandidateTiger = selectedSighting.secondCandidateId
@@ -131,58 +149,85 @@ export const ImageReview: React.FC = () => {
           <div className="stream-header">
             <h3 className="tt-card-title">
               <span>Observation Feed</span>
+              <span className="feed-count badge badge-subtle">{filteredSightings.length}</span>
             </h3>
             <div className="stream-search">
               <Search size={13} className="text-muted" />
-              <input type="text" placeholder="Search capture ID or station..." className="search-input" />
+              <input
+                type="text"
+                placeholder="Search capture ID or station..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="clear-search-btn"
+                  onClick={() => setSearchQuery('')}
+                  title="Clear search"
+                  aria-label="Clear search"
+                >
+                  <X size={12} />
+                </button>
+              )}
             </div>
           </div>
 
           <div className="sightings-list">
-            {filteredSightings.map((s) => {
-              const isSelected = s.id === selectedSighting.id;
-              return (
-                <div
-                  key={s.id}
-                  className={`sighting-item ${isSelected ? 'selected' : ''}`}
-                  onClick={() => setSelectedSightingId(s.id)}
-                >
-                  <div className="item-thumb-box">
-                    <img src={s.thumbnailUrl} alt="Sighting" className="item-thumb" />
-                    <span className="item-flank-tag">{s.flankSide}</span>
+            {filteredSightings.length === 0 ? (
+              <div className="empty-search-state">
+                <p>No captures match "{searchQuery}"</p>
+                <button className="tt-btn tt-btn-ghost clear-btn-inline" onClick={() => setSearchQuery('')}>
+                  Reset search
+                </button>
+              </div>
+            ) : (
+              filteredSightings.map((s) => {
+                const isSelected = s.id === selectedSighting.id;
+                return (
+                  <div
+                    key={s.id}
+                    className={`sighting-item ${isSelected ? 'selected' : ''}`}
+                    onClick={() => setSelectedSightingId(s.id)}
+                  >
+                    <div className="item-thumb-box">
+                      <img src={s.thumbnailUrl} alt="Sighting" className="item-thumb" />
+                      <span className="item-flank-tag">{s.flankSide}</span>
+                    </div>
+
+                    <div className="item-info">
+                      <div className="item-header-row">
+                        <span className="item-candidate-id font-mono">{s.topCandidateId}</span>
+                        <span className="telemetry-num match-pct">
+                          {(s.topCandidateConfidence * 100).toFixed(0)}% Score
+                        </span>
+                      </div>
+
+                      <div className="item-station-line">
+                        <Camera size={11} className="text-muted" />
+                        <span>{s.cameraTrapName}</span>
+                      </div>
+
+                      <div className="item-meta-row">
+                        <span className="item-time">
+                          {new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {s.isAmbiguous ? (
+                          <span className="badge badge-amber">Ambiguous</span>
+                        ) : s.reviewStatus === 'VERIFIED' ? (
+                          <span className="badge badge-forest">Verified</span>
+                        ) : s.reviewStatus === 'REJECTED' ? (
+                          <span className="badge badge-red">Rejected</span>
+                        ) : (
+                          <span className="badge badge-subtle">Pending</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-
-                  <div className="item-info">
-                    <div className="item-header-row">
-                      <span className="item-candidate-id font-mono">{s.topCandidateId}</span>
-                      <span className="telemetry-num match-pct">
-                        {(s.topCandidateConfidence * 100).toFixed(0)}% Score
-                      </span>
-                    </div>
-
-                    <div className="item-station-line">
-                      <Camera size={11} className="text-muted" />
-                      <span>{s.cameraTrapName}</span>
-                    </div>
-
-                    <div className="item-meta-row">
-                      <span className="item-time">
-                        {new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      {s.isAmbiguous ? (
-                        <span className="badge badge-amber">Ambiguous</span>
-                      ) : s.reviewStatus === 'VERIFIED' ? (
-                        <span className="badge badge-forest">Verified</span>
-                      ) : s.reviewStatus === 'REJECTED' ? (
-                        <span className="badge badge-red">Rejected</span>
-                      ) : (
-                        <span className="badge badge-subtle">Pending</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -472,6 +517,12 @@ export const ImageReview: React.FC = () => {
           border: 1px solid var(--border-default);
           border-radius: var(--radius-sm);
           padding: 5px 8px;
+          transition: border-color var(--transition-fast);
+        }
+
+        .stream-search:focus-within {
+          border-color: var(--border-active);
+          background: #FFFFFF;
         }
 
         .search-input {
@@ -481,6 +532,44 @@ export const ImageReview: React.FC = () => {
           font-size: 11.5px;
           color: var(--text-primary);
           width: 100%;
+        }
+
+        .clear-search-btn {
+          color: var(--text-muted);
+          padding: 2px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          cursor: pointer;
+          transition: color var(--transition-fast);
+        }
+
+        .clear-search-btn:hover {
+          color: var(--text-primary);
+        }
+
+        .feed-count {
+          font-size: 10px;
+          padding: 1px 6px;
+        }
+
+        .empty-search-state {
+          padding: 30px 14px;
+          text-align: center;
+          color: var(--text-muted);
+          font-size: 12px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .clear-btn-inline {
+          font-size: 11.5px;
+          color: var(--color-primary);
+          text-decoration: underline;
+          padding: 4px 8px;
         }
 
         .sightings-list {

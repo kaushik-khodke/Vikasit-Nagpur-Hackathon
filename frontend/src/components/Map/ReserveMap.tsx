@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -32,27 +32,27 @@ const createCameraIcon = (status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE_REQUIRED')
       <div style="
         background-color: ${bg};
         color: #FFFFFF;
-        width: 24px;
-        height: 24px;
-        border-radius: 4px;
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
         border: 2px solid #FFFFFF;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        font-size: 11px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+        font-size: 12px;
       " title="Camera Trap Station">📷</div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -14]
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -15]
   });
 };
 
 // Custom DivIcon for Tiger Detection Points
 const createTigerDetectionIcon = (tigerId: string, isSelected: boolean) => {
-  const bg = isSelected ? '#B45309' : '#1B5E3C';
-  const border = isSelected ? '#FEF3C7' : '#FFFFFF';
+  const bg = isSelected ? '#D97706' : '#13462D';
+  const border = isSelected ? '#FEF08A' : '#FFFFFF';
 
   return L.divIcon({
     className: 'custom-map-icon',
@@ -60,22 +60,22 @@ const createTigerDetectionIcon = (tigerId: string, isSelected: boolean) => {
       <div style="
         background-color: ${bg};
         color: #FFFFFF;
-        padding: 3px 6px;
+        padding: 3px 7px;
         border-radius: 4px;
         font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
+        font-size: 10.5px;
         font-weight: 700;
         border: 1.5px solid ${border};
-        box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.6);
         display: flex;
         align-items: center;
         gap: 4px;
         white-space: nowrap;
       ">🐅 ${tigerId}</div>
     `,
-    iconSize: [68, 22],
-    iconAnchor: [34, 11],
-    popupAnchor: [0, -12]
+    iconSize: [72, 24],
+    iconAnchor: [36, 12],
+    popupAnchor: [0, -14]
   });
 };
 
@@ -88,8 +88,8 @@ const MapViewController: React.FC<{ center: [number, number]; zoom: number }> = 
   return null;
 };
 
-// Palette for territory polygons (restrained earthy/forest tones)
-const polygonPalette = ['#1B5E3C', '#2563EB', '#D97706', '#7C3AED', '#0D9488', '#BE123C'];
+// Palette for territory polygons (high-visibility tones that shine on satellite & street layers)
+const polygonPalette = ['#22C55E', '#3B82F6', '#F59E0B', '#A855F7', '#14B8A6', '#EC4899'];
 
 export interface ReserveMapProps {
   tigers: TigerProfile[];
@@ -114,6 +114,9 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
   height = '100%',
   className = ''
 }) => {
+  // Map Layer Type: default to Google Satellite Hybrid view
+  const [mapStyle, setMapStyle] = useState<'google-hybrid' | 'esri-satellite' | 'osm' | 'google-terrain'>('google-hybrid');
+
   // Synthetic coordinates for Pench Tiger Reserve area
   const defaultCenter: [number, number] = [21.730, 79.320];
 
@@ -139,10 +142,56 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
 
   return (
     <div className={`reserve-map-wrapper ${className}`} style={{ height, position: 'relative', minHeight: '380px' }}>
+      {/* Map Layer Switcher Toolbar */}
+      <div className="map-layer-switcher">
+        <div className="layer-switcher-label">Basemap:</div>
+        <div className="layer-pill-group">
+          <button
+            type="button"
+            className={`layer-pill-btn ${mapStyle === 'google-hybrid' ? 'active' : ''}`}
+            onClick={() => setMapStyle('google-hybrid')}
+            title="Google Satellite Hybrid with Roads & Labels"
+          >
+            <span className="pill-icon">🛰️</span>
+            <span>Google Satellite</span>
+          </button>
+
+          <button
+            type="button"
+            className={`layer-pill-btn ${mapStyle === 'esri-satellite' ? 'active' : ''}`}
+            onClick={() => setMapStyle('esri-satellite')}
+            title="Esri World Satellite Imagery"
+          >
+            <span className="pill-icon">🌍</span>
+            <span>Esri Imagery</span>
+          </button>
+
+          <button
+            type="button"
+            className={`layer-pill-btn ${mapStyle === 'osm' ? 'active' : ''}`}
+            onClick={() => setMapStyle('osm')}
+            title="OpenStreetMap Standard Vector Map"
+          >
+            <span className="pill-icon">🗺️</span>
+            <span>OpenStreetMap</span>
+          </button>
+
+          <button
+            type="button"
+            className={`layer-pill-btn ${mapStyle === 'google-terrain' ? 'active' : ''}`}
+            onClick={() => setMapStyle('google-terrain')}
+            title="Google Terrain & Contours"
+          >
+            <span className="pill-icon">⛰️</span>
+            <span>Terrain</span>
+          </button>
+        </div>
+      </div>
+
       {/* Synthetic Spatial Data Watermark */}
       <div className="map-synthetic-watermark">
         <span className="watermark-dot" />
-        <span>Prototype / Synthetic Spatial Data</span>
+        <span>Pench Tiger Reserve GIS • Live Spatial View</span>
       </div>
 
       <MapContainer
@@ -154,12 +203,56 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
       >
         <MapViewController center={activeCenter} zoom={activeZoom} />
 
-        {/* Clean, readable CartoDB Voyager Tile Layer */}
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          maxZoom={18}
-        />
+        {/* Google Satellite Hybrid (Exact match to Google Maps satellite screenshot with roads and labels) */}
+        {mapStyle === 'google-hybrid' && (
+          <TileLayer
+            key="google-hybrid-tiles"
+            attribution='&copy; Google Maps'
+            url="https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+            subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+            maxZoom={20}
+          />
+        )}
+
+        {/* Esri World Imagery */}
+        {mapStyle === 'esri-satellite' && (
+          <>
+            <TileLayer
+              key="esri-satellite"
+              attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={18}
+            />
+            <TileLayer
+              key="esri-labels"
+              attribution='&copy; OpenStreetMap'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={18}
+              opacity={0.85}
+            />
+          </>
+        )}
+
+        {/* OpenStreetMap Standard Tile Layer */}
+        {mapStyle === 'osm' && (
+          <TileLayer
+            key="osm-standard"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={19}
+          />
+        )}
+
+        {/* Google Terrain with Contours and Roads */}
+        {mapStyle === 'google-terrain' && (
+          <TileLayer
+            key="google-terrain-tiles"
+            attribution='&copy; Google Maps'
+            url="https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}"
+            subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+            maxZoom={20}
+          />
+        )}
 
         {/* Home Range Territory Polygons */}
         {showPolygons && tigers.map((tiger, idx) => {
@@ -171,18 +264,18 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
               key={`poly-${tiger.id}`}
               positions={tiger.homeRange.polygonCoordinates}
               pathOptions={{
-                color: isSelected ? '#B45309' : color,
-                fillColor: isSelected ? '#B45309' : color,
-                fillOpacity: isSelected ? 0.28 : 0.12,
-                weight: isSelected ? 2.5 : 1.5,
-                dashArray: isSelected ? undefined : '4, 4'
+                color: isSelected ? '#F59E0B' : color,
+                fillColor: isSelected ? '#F59E0B' : color,
+                fillOpacity: isSelected ? 0.35 : 0.18,
+                weight: isSelected ? 3.5 : 2.2,
+                dashArray: isSelected ? undefined : '6, 6'
               }}
             >
               <Popup>
                 <div className="tt-map-popup">
                   <div className="popup-header-row">
                     <span className="popup-id-badge">{tiger.id}</span>
-                    <span className="popup-zone-badge">{tiger.primaryZone}</span>
+                    <span className="popup-zone-badge">{tiger.primaryZone} Sector</span>
                   </div>
                   <div className="popup-body">
                     <div className="popup-stat-row">
@@ -218,10 +311,10 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
               key={`path-${tiger.id}`}
               positions={pathCoords}
               pathOptions={{
-                color: isSelected ? '#B45309' : '#1B5E3C',
-                weight: isSelected ? 3 : 2,
-                opacity: isSelected ? 0.9 : 0.6,
-                dashArray: '5, 6'
+                color: isSelected ? '#FBBF24' : '#34D399',
+                weight: isSelected ? 3.5 : 2.5,
+                opacity: isSelected ? 0.95 : 0.75,
+                dashArray: '6, 6'
               }}
             />
           );
@@ -322,7 +415,70 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           border-radius: var(--radius-md);
           overflow: hidden;
           border: 1px solid var(--border-default);
-          background: #FFFFFF;
+          background: #111827;
+        }
+
+        .map-layer-switcher {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          z-index: 500;
+          background: rgba(17, 24, 39, 0.88);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          padding: 4px 8px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .layer-switcher-label {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          font-weight: 700;
+          color: #9CA3AF;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .layer-pill-group {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .layer-pill-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #D1D5DB;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .layer-pill-btn:hover {
+          background: rgba(255, 255, 255, 0.18);
+          color: #FFFFFF;
+          border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .layer-pill-btn.active {
+          background: #16A34A;
+          color: #FFFFFF;
+          border-color: #22C55E;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .layer-pill-btn .pill-icon {
+          font-size: 12px;
         }
 
         .map-synthetic-watermark {
@@ -330,25 +486,27 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           top: 10px;
           right: 10px;
           z-index: 500;
-          background: rgba(255, 255, 255, 0.94);
-          border: 1px solid #C5D6CC;
-          padding: 3px 8px;
+          background: rgba(17, 24, 39, 0.88);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          padding: 4px 10px;
           border-radius: 4px;
           font-size: 10.5px;
           font-weight: 600;
-          color: #1B5E3C;
+          color: #86EFAC;
           display: flex;
           align-items: center;
-          gap: 5px;
-          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+          gap: 6px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
           pointer-events: none;
         }
 
         .watermark-dot {
-          width: 6px;
-          height: 6px;
+          width: 7px;
+          height: 7px;
           border-radius: 50%;
-          background: #1B5E3C;
+          background: #22C55E;
+          box-shadow: 0 0 8px #22C55E;
         }
 
         .tt-map-popup {
@@ -356,7 +514,7 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           font-size: 12px;
           line-height: 1.4;
           color: var(--text-primary);
-          min-width: 200px;
+          min-width: 210px;
         }
 
         .popup-header-row {
@@ -410,6 +568,11 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           color: #9A3412;
         }
 
+        .popup-status-badge.offline {
+          background: #FEE2E2;
+          color: #991B1B;
+        }
+
         .popup-station-name {
           font-size: 12.5px;
           font-weight: 600;
@@ -419,7 +582,7 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
 
         .popup-photo-frame {
           width: 100%;
-          height: 100px;
+          height: 105px;
           border-radius: 4px;
           overflow: hidden;
           background: #F0F4F1;
@@ -460,6 +623,20 @@ export const ReserveMap: React.FC<ReserveMapProps> = ({
           margin-top: 4px;
           border-top: 1px solid #E6EDE8;
           padding-top: 4px;
+        }
+
+        @media (max-width: 768px) {
+          .map-layer-switcher {
+            top: auto;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            justify-content: center;
+          }
+
+          .map-synthetic-watermark {
+            display: none;
+          }
         }
       `}</style>
     </div>
