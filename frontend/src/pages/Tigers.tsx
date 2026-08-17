@@ -6,8 +6,6 @@ import {
   MapPin,
   Calendar,
   ArrowRight,
-  Camera,
-  Layers,
   Info
 } from 'lucide-react';
 import { mockTigers } from '../data/mockData';
@@ -34,8 +32,11 @@ export const Tigers: React.FC = () => {
     <div className="tigers-page">
       {/* Synthetic Notice */}
       <div className="synthetic-banner">
-        <div className="banner-text">
-          <strong>Fauna Population Inventory:</strong> Listing deterministic individual records (<span className="telemetry-num">SIM-TIG-001</span> to <span className="telemetry-num">SIM-TIG-006</span>) established from camera-trap flank identification.
+        <div className="banner-left">
+          <Info size={14} className="text-forest" />
+          <span>
+            <strong>Fauna Population Inventory:</strong> Listing deterministic individual records (<span className="telemetry-num">SIM-TIG-001</span> to <span className="telemetry-num">SIM-TIG-006</span>) established from camera-trap flank identification.
+          </span>
         </div>
         <span className="synthetic-tag">PROTOTYPE REGISTRY</span>
       </div>
@@ -70,7 +71,7 @@ export const Tigers: React.FC = () => {
           </div>
 
           <div className="filter-group">
-            <label className="filter-label">Primary Zone:</label>
+            <label className="filter-label">Primary Sector:</label>
             <select
               className="tt-select filter-select"
               value={zoneFilter}
@@ -96,7 +97,7 @@ export const Tigers: React.FC = () => {
             <div className="card-image-wrap">
               <img src={tiger.imageUrl} alt={tiger.id} className="card-tiger-img" />
               <div className="card-top-badges">
-                <span className="badge badge-forest">{tiger.id}</span>
+                <span className="badge badge-forest font-mono">{tiger.id}</span>
                 <span className="badge badge-subtle">
                   {tiger.sex === 'FEMALE' ? '♀ Female' : '♂ Male'} ({tiger.ageClass})
                 </span>
@@ -110,7 +111,7 @@ export const Tigers: React.FC = () => {
             {/* Card Content Details */}
             <div className="card-body">
               <div className="tiger-header-row">
-                <h3 className="tiger-title">{tiger.id}</h3>
+                <h3 className="tiger-title font-mono">{tiger.id}</h3>
                 <span className="stripe-sig-tag telemetry-num">{tiger.stripeSignature}</span>
               </div>
 
@@ -123,7 +124,7 @@ export const Tigers: React.FC = () => {
                 </div>
                 <div className="metric-box">
                   <span className="metric-lbl">Camera Detections</span>
-                  <span className="metric-val telemetry-num">{tiger.detectionCount} observations</span>
+                  <span className="metric-val telemetry-num">{tiger.detectionCount} captures</span>
                 </div>
               </div>
 
@@ -162,6 +163,12 @@ export const Tigers: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 14px;
+        }
+
+        .banner-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .filters-card {
@@ -391,6 +398,9 @@ export const Tigers: React.FC = () => {
           padding: 30px;
           gap: 6px;
         }
+
+        .text-forest { color: var(--color-primary); }
+        .font-mono { font-family: var(--font-mono); }
       `}</style>
     </div>
   );

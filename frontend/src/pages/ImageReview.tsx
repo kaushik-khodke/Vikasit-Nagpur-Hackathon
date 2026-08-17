@@ -11,17 +11,21 @@ import {
   Calendar,
   Thermometer,
   Search,
-  Sparkles,
-  Info
+  Info,
+  Check
 } from 'lucide-react';
 import { mockSightings, mockTigers } from '../data/mockData';
 import type { Sighting } from '../types/tiger';
 
 export const ImageReview: React.FC = () => {
-  const [selectedSighting, setSelectedSighting] = useState<Sighting>(mockSightings[0]);
+  const [sightingsState, setSightingsState] = useState<Sighting[]>(mockSightings);
+  const [selectedSightingId, setSelectedSightingId] = useState<string>(mockSightings[0].id);
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'VERIFIED'>('ALL');
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
-  const filteredSightings = mockSightings.filter((s) => {
+  const selectedSighting = sightingsState.find(s => s.id === selectedSightingId) || sightingsState[0];
+
+  const filteredSightings = sightingsState.filter((s) => {
     if (activeFilter === 'PENDING') return s.reviewStatus === 'PENDING_REVIEW';
     if (activeFilter === 'VERIFIED') return s.reviewStatus === 'VERIFIED';
     return true;
@@ -32,14 +36,45 @@ export const ImageReview: React.FC = () => {
     ? mockTigers.find((t) => t.id === selectedSighting.secondCandidateId)
     : undefined;
 
+  // Handle Biologist Actions
+  const handleConfirmMatch = () => {
+    setSightingsState(prev =>
+      prev.map(s => s.id === selectedSighting.id ? { ...s, reviewStatus: 'VERIFIED', isAmbiguous: false } : s)
+    );
+    setActionFeedback(`Verified observation as individual ${selectedSighting.topCandidateId}. Record updated in registry.`);
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
+
+  const handleRejectMatch = () => {
+    setSightingsState(prev =>
+      prev.map(s => s.id === selectedSighting.id ? { ...s, reviewStatus: 'REJECTED' } : s)
+    );
+    setActionFeedback(`Candidate match rejected. Marked for manual feature re-extraction.`);
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
+
+  const handleCreateNewIndividual = () => {
+    const newId = `SIM-TIG-${String(mockTigers.length + 1).padStart(3, '0')}`;
+    setActionFeedback(`Initiated new individual registration workflow for provisional ID: ${newId}.`);
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
+
+  const handleReviewEvidence = () => {
+    setActionFeedback(`Loaded historical flank comparison frames from station ${selectedSighting.cameraTrapName}.`);
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
+
   return (
     <div className="review-page">
       {/* Synthetic Spatial / Biometric Notice */}
       <div className="synthetic-banner">
-        <div className="banner-text">
-          <strong>Biometric Match Prototype:</strong> Candidate scores represent simulated stripe-pattern cosine similarities. Manual human confirmation is mandatory for official records.
+        <div className="banner-left">
+          <Info size={14} className="text-forest" />
+          <span>
+            <strong>Biometric Stripe Screening Console:</strong> Candidate matching scores represent prototype cosine similarities extracted from synthetic camera-trap flank imagery. Manual human confirmation is mandatory for all official records.
+          </span>
         </div>
-        <span className="synthetic-tag">PROTOTYPE SIMILARITY SCORES</span>
+        <span className="synthetic-tag">PROTOTYPE BIOMETRIC QUEUE</span>
       </div>
 
       {/* Control Bar */}
@@ -50,9 +85,9 @@ export const ImageReview: React.FC = () => {
             <span>CAMERA-TRAP BIOMETRIC VERIFICATION QUEUE</span>
           </div>
           <div className="queue-summary">
-            <span>{mockSightings.length} Total Processed Captures</span> •{' '}
+            <span>{sightingsState.length} Total Processed Captures</span> •{' '}
             <span className="text-warning">
-              {mockSightings.filter(s => s.reviewStatus === 'PENDING_REVIEW').length} Awaiting Biologist Verification
+              {sightingsState.filter(s => s.reviewStatus === 'PENDING_REVIEW').length} Awaiting Biologist Verification
             </span>
           </div>
         </div>
@@ -63,23 +98,31 @@ export const ImageReview: React.FC = () => {
               className={`filter-pill ${activeFilter === 'ALL' ? 'active' : ''}`}
               onClick={() => setActiveFilter('ALL')}
             >
-              All ({mockSightings.length})
+              All ({sightingsState.length})
             </button>
             <button
               className={`filter-pill ${activeFilter === 'PENDING' ? 'active' : ''}`}
               onClick={() => setActiveFilter('PENDING')}
             >
-              Pending ({mockSightings.filter(s => s.reviewStatus === 'PENDING_REVIEW').length})
+              Pending ({sightingsState.filter(s => s.reviewStatus === 'PENDING_REVIEW').length})
             </button>
             <button
               className={`filter-pill ${activeFilter === 'VERIFIED' ? 'active' : ''}`}
               onClick={() => setActiveFilter('VERIFIED')}
             >
-              Verified
+              Verified ({sightingsState.filter(s => s.reviewStatus === 'VERIFIED').length})
             </button>
           </div>
         </div>
       </div>
+
+      {/* Action Toast Feedback */}
+      {actionFeedback && (
+        <div className="action-feedback-toast">
+          <Check size={14} />
+          <span>{actionFeedback}</span>
+        </div>
+      )}
 
       {/* Main Review Layout */}
       <div className="review-layout-grid">
@@ -102,7 +145,7 @@ export const ImageReview: React.FC = () => {
                 <div
                   key={s.id}
                   className={`sighting-item ${isSelected ? 'selected' : ''}`}
-                  onClick={() => setSelectedSighting(s)}
+                  onClick={() => setSelectedSightingId(s.id)}
                 >
                   <div className="item-thumb-box">
                     <img src={s.thumbnailUrl} alt="Sighting" className="item-thumb" />
@@ -111,9 +154,9 @@ export const ImageReview: React.FC = () => {
 
                   <div className="item-info">
                     <div className="item-header-row">
-                      <span className="item-candidate-id">{s.topCandidateId}</span>
+                      <span className="item-candidate-id font-mono">{s.topCandidateId}</span>
                       <span className="telemetry-num match-pct">
-                        {(s.topCandidateConfidence * 100).toFixed(0)}% Match
+                        {(s.topCandidateConfidence * 100).toFixed(0)}% Score
                       </span>
                     </div>
 
@@ -130,6 +173,8 @@ export const ImageReview: React.FC = () => {
                         <span className="badge badge-amber">Ambiguous</span>
                       ) : s.reviewStatus === 'VERIFIED' ? (
                         <span className="badge badge-forest">Verified</span>
+                      ) : s.reviewStatus === 'REJECTED' ? (
+                        <span className="badge badge-red">Rejected</span>
                       ) : (
                         <span className="badge badge-subtle">Pending</span>
                       )}
@@ -164,7 +209,7 @@ export const ImageReview: React.FC = () => {
               <div>
                 <strong>AMBIGUOUS MATCH — HUMAN REVIEW REQUIRED</strong>
                 <p>
-                  The confidence differential between candidate <strong>{selectedSighting.topCandidateId}</strong> ({(selectedSighting.topCandidateConfidence * 100).toFixed(0)}%) and <strong>{selectedSighting.secondCandidateId}</strong> ({(selectedSighting.secondCandidateConfidence! * 100).toFixed(0)}%) is under 8%. Thorough stripe pattern manual comparison is advised.
+                  The confidence differential between candidate <strong>{selectedSighting.topCandidateId}</strong> ({(selectedSighting.topCandidateConfidence * 100).toFixed(0)}%) and second candidate <strong>{selectedSighting.secondCandidateId}</strong> ({(selectedSighting.secondCandidateConfidence! * 100).toFixed(0)}%) is under 8%. Thorough stripe pattern manual comparison is required.
                 </p>
               </div>
             </div>
@@ -177,7 +222,7 @@ export const ImageReview: React.FC = () => {
               <div className="cand-rank-badge">TOP CANDIDATE</div>
               <div className="cand-main-row">
                 <div>
-                  <span className="cand-id telemetry-num">{selectedSighting.topCandidateId}</span>
+                  <span className="cand-id font-mono">{selectedSighting.topCandidateId}</span>
                   <span className="cand-sex">({topCandidateTiger?.sex === 'FEMALE' ? 'Female' : 'Male'}, {topCandidateTiger?.ageClass})</span>
                 </div>
                 <div className="cand-score telemetry-num">
@@ -185,17 +230,17 @@ export const ImageReview: React.FC = () => {
                 </div>
               </div>
               <div className="cand-sub-meta">
-                <span>Stripe Sig: {topCandidateTiger?.stripeSignature}</span> • <span>Range: {topCandidateTiger?.primaryZone}</span>
+                <span>Stripe Sig: <span className="font-mono">{topCandidateTiger?.stripeSignature}</span></span> • <span>Range: {topCandidateTiger?.primaryZone}</span>
               </div>
             </div>
 
             {/* Second Candidate */}
             {selectedSighting.secondCandidateId && secondCandidateTiger && (
               <div className="candidate-card secondary-candidate">
-                <div className="cand-rank-badge sec">RUNNER-UP CANDIDATE</div>
+                <div className="cand-rank-badge sec">SECOND CANDIDATE</div>
                 <div className="cand-main-row">
                   <div>
-                    <span className="cand-id telemetry-num">{selectedSighting.secondCandidateId}</span>
+                    <span className="cand-id font-mono">{selectedSighting.secondCandidateId}</span>
                     <span className="cand-sex">({secondCandidateTiger.sex === 'FEMALE' ? 'Female' : 'Male'})</span>
                   </div>
                   <div className="cand-score telemetry-num">
@@ -203,7 +248,7 @@ export const ImageReview: React.FC = () => {
                   </div>
                 </div>
                 <div className="cand-sub-meta">
-                  <span>Stripe Sig: {secondCandidateTiger.stripeSignature}</span> • <span>Range: {secondCandidateTiger.primaryZone}</span>
+                  <span>Stripe Sig: <span className="font-mono">{secondCandidateTiger.stripeSignature}</span></span> • <span>Range: {secondCandidateTiger.primaryZone}</span>
                 </div>
               </div>
             )}
@@ -215,7 +260,7 @@ export const ImageReview: React.FC = () => {
             <div className="compare-panel">
               <div className="panel-header">
                 <span>Current Observation ({selectedSighting.flankSide} FLANK)</span>
-                <span className="badge badge-subtle">{selectedSighting.cameraTrapId}</span>
+                <span className="badge badge-subtle font-mono">{selectedSighting.cameraTrapId}</span>
               </div>
               <div className="image-frame">
                 <img
@@ -224,7 +269,7 @@ export const ImageReview: React.FC = () => {
                   className="compare-img"
                 />
                 <div className="overlay-flank-box">
-                  <span className="bounding-label">Stripe Segment Grid Ref</span>
+                  <span className="bounding-label font-mono">Camera Frame Segment Ref</span>
                 </div>
               </div>
             </div>
@@ -232,8 +277,8 @@ export const ImageReview: React.FC = () => {
             {/* Reference Registry Profile */}
             <div className="compare-panel">
               <div className="panel-header">
-                <span>Cataloged Profile Reference ({selectedSighting.topCandidateId})</span>
-                <span className="badge badge-forest">{topCandidateTiger?.stripeSignature}</span>
+                <span>Cataloged Profile Baseline ({selectedSighting.topCandidateId})</span>
+                <span className="badge badge-forest font-mono">{topCandidateTiger?.stripeSignature}</span>
               </div>
               <div className="image-frame">
                 {topCandidateTiger ? (
@@ -244,7 +289,7 @@ export const ImageReview: React.FC = () => {
                   />
                 ) : (
                   <div className="empty-registry-state">
-                    <Info size={32} />
+                    <Info size={28} />
                     <span>No baseline archive record found.</span>
                   </div>
                 )}
@@ -257,7 +302,7 @@ export const ImageReview: React.FC = () => {
             <div className="meta-cell">
               <div className="cell-label">
                 <Calendar size={11} />
-                <span>Timestamp</span>
+                <span>Observation Timestamp</span>
               </div>
               <div className="cell-value telemetry-num">
                 {new Date(selectedSighting.timestamp).toLocaleString()}
@@ -277,7 +322,7 @@ export const ImageReview: React.FC = () => {
             <div className="meta-cell">
               <div className="cell-label">
                 <Thermometer size={11} />
-                <span>Observation Context</span>
+                <span>Camera Context</span>
               </div>
               <div className="cell-value">
                 {selectedSighting.environmentalConditions?.weather || 'Clear'},{' '}
@@ -289,19 +334,19 @@ export const ImageReview: React.FC = () => {
 
           {/* Biologist Decision Action Buttons */}
           <div className="decision-action-bar">
-            <button className="tt-btn tt-btn-primary">
+            <button className="tt-btn tt-btn-primary" onClick={handleConfirmMatch}>
               <CheckCircle2 size={14} />
               <span>Confirm Match as {selectedSighting.topCandidateId}</span>
             </button>
-            <button className="tt-btn tt-btn-secondary">
+            <button className="tt-btn tt-btn-secondary" onClick={handleCreateNewIndividual}>
               <UserPlus size={14} />
               <span>Create New Individual</span>
             </button>
-            <button className="tt-btn tt-btn-secondary">
+            <button className="tt-btn tt-btn-secondary" onClick={handleReviewEvidence}>
               <FileSearch size={14} />
               <span>Review Evidence Archives</span>
             </button>
-            <button className="tt-btn tt-btn-ghost text-danger">
+            <button className="tt-btn tt-btn-ghost text-danger" onClick={handleRejectMatch}>
               <XCircle size={14} />
               <span>Reject Match</span>
             </button>
@@ -314,6 +359,12 @@ export const ImageReview: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 14px;
+        }
+
+        .banner-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .review-control-bar {
@@ -373,6 +424,19 @@ export const ImageReview: React.FC = () => {
           border: 1px solid var(--border-default);
         }
 
+        .action-feedback-toast {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #DCFCE7;
+          border: 1px solid #BBF7D0;
+          color: #166534;
+          padding: 8px 14px;
+          border-radius: var(--radius-sm);
+          font-size: 12px;
+          font-weight: 500;
+        }
+
         .review-layout-grid {
           display: grid;
           grid-template-columns: 320px 1fr;
@@ -388,8 +452,8 @@ export const ImageReview: React.FC = () => {
         .stream-card {
           display: flex;
           flex-direction: column;
-          height: calc(100vh - 210px);
-          min-height: 500px;
+          height: calc(100vh - 230px);
+          min-height: 520px;
           padding: 14px;
         }
 
@@ -403,7 +467,7 @@ export const ImageReview: React.FC = () => {
         .stream-search {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           background: var(--bg-surface-subtle);
           border: 1px solid var(--border-default);
           border-radius: var(--radius-sm);
@@ -425,13 +489,12 @@ export const ImageReview: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 6px;
-          padding-right: 2px;
         }
 
         .sighting-item {
           display: flex;
           gap: 10px;
-          padding: 8px;
+          padding: 8px 10px;
           background: var(--bg-surface-subtle);
           border: 1px solid var(--border-default);
           border-radius: var(--radius-sm);
@@ -441,21 +504,21 @@ export const ImageReview: React.FC = () => {
 
         .sighting-item:hover {
           border-color: var(--border-active);
-          background: #FFFFFF;
         }
 
         .sighting-item.selected {
           border-color: var(--color-primary);
-          background: var(--color-primary-bg);
+          background: #FFFFFF;
+          box-shadow: var(--shadow-sm);
         }
 
         .item-thumb-box {
           position: relative;
-          width: 56px;
-          height: 56px;
+          width: 52px;
+          height: 52px;
           border-radius: var(--radius-sm);
           overflow: hidden;
-          background: #E6EDE8;
+          background: #E5E7EB;
           flex-shrink: 0;
         }
 
@@ -469,20 +532,21 @@ export const ImageReview: React.FC = () => {
           position: absolute;
           bottom: 2px;
           left: 2px;
-          font-family: var(--font-mono);
           font-size: 8px;
           font-weight: 700;
           background: rgba(0, 0, 0, 0.7);
-          color: #FFFFFF;
+          color: #FFF;
           padding: 1px 3px;
           border-radius: 2px;
+          font-family: var(--font-mono);
         }
 
         .item-info {
           flex: 1;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
+          gap: 2px;
+          min-width: 0;
         }
 
         .item-header-row {
@@ -492,15 +556,14 @@ export const ImageReview: React.FC = () => {
         }
 
         .item-candidate-id {
-          font-family: var(--font-mono);
-          font-size: 11.5px;
+          font-size: 12px;
           font-weight: 700;
           color: var(--text-primary);
         }
 
         .match-pct {
-          font-size: 10.5px;
-          font-weight: 700;
+          font-size: 11px;
+          font-weight: 600;
           color: var(--color-primary);
         }
 
@@ -509,22 +572,23 @@ export const ImageReview: React.FC = () => {
           align-items: center;
           gap: 4px;
           font-size: 10.5px;
-          color: var(--text-secondary);
+          color: var(--text-muted);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .item-meta-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          font-size: 10px;
-        }
-
-        .item-time {
+          font-size: 10.5px;
           color: var(--text-muted);
-          font-family: var(--font-mono);
+          margin-top: 2px;
         }
 
         .detail-verification-card {
+          padding: 18px 20px;
           display: flex;
           flex-direction: column;
           gap: 14px;
@@ -532,53 +596,60 @@ export const ImageReview: React.FC = () => {
 
         .detail-top-bar {
           display: flex;
-          align-items: center;
           justify-content: space-between;
-          border-bottom: 1px solid var(--border-default);
-          padding-bottom: 10px;
+          align-items: flex-start;
         }
 
         .detail-id-tag {
-          font-size: 10.5px;
+          font-size: 11px;
           color: var(--text-muted);
+          font-weight: 500;
+          margin-bottom: 2px;
         }
 
         .detail-title {
           font-size: 16px;
-          font-weight: 600;
+          font-weight: 700;
+          color: var(--text-primary);
         }
 
         .flank-tag-pill {
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
-          padding: 4px 8px;
-          border-radius: var(--radius-sm);
           font-family: var(--font-mono);
-          font-size: 11px;
-          font-weight: 600;
-          color: var(--text-secondary);
+          font-size: 10.5px;
+          font-weight: 700;
+          background: #E8F2EC;
+          border: 1px solid #C4DEC0;
+          color: var(--color-primary);
+          padding: 3px 8px;
+          border-radius: var(--radius-sm);
         }
 
         .ambiguous-warning-box {
           display: flex;
-          align-items: flex-start;
           gap: 10px;
-          background-color: var(--status-warning-bg);
-          border: 1px solid var(--status-warning-border);
+          background: #FEF3C7;
+          border: 1px solid #FDE68A;
           border-radius: var(--radius-sm);
           padding: 10px 14px;
+          color: #92400E;
           font-size: 12px;
-          color: var(--status-warning-text);
         }
 
         .text-amber-icon {
           color: #B45309;
           flex-shrink: 0;
-          margin-top: 1px;
+          margin-top: 2px;
+        }
+
+        .ambiguous-warning-box strong {
+          color: #78350F;
+          font-size: 12px;
+          display: block;
+          margin-bottom: 2px;
         }
 
         .ambiguous-warning-box p {
-          margin-top: 2px;
+          color: #92400E;
           font-size: 11.5px;
           line-height: 1.4;
         }
@@ -586,44 +657,40 @@ export const ImageReview: React.FC = () => {
         .candidates-overview-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 10px;
+          gap: 12px;
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .candidates-overview-grid {
             grid-template-columns: 1fr;
           }
         }
 
         .candidate-card {
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-sm);
           padding: 10px 12px;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--border-default);
           background: var(--bg-surface-subtle);
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 4px;
         }
 
         .candidate-card.primary-candidate {
-          border-left: 3px solid var(--color-primary);
-          background: #F4F8F5;
-        }
-
-        .candidate-card.secondary-candidate {
-          border-left: 3px solid #D97706;
+          border-color: #B8D8C4;
+          background: #F4F9F6;
         }
 
         .cand-rank-badge {
           font-family: var(--font-mono);
-          font-size: 9px;
+          font-size: 9.5px;
           font-weight: 700;
           color: var(--color-primary);
-          letter-spacing: 0.05em;
+          letter-spacing: 0.04em;
         }
 
         .cand-rank-badge.sec {
-          color: #B45309;
+          color: #9A3412;
         }
 
         .cand-main-row {
@@ -633,35 +700,35 @@ export const ImageReview: React.FC = () => {
         }
 
         .cand-id {
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 700;
           color: var(--text-primary);
+          margin-right: 6px;
         }
 
         .cand-sex {
-          font-size: 11px;
+          font-size: 11.5px;
           color: var(--text-muted);
-          margin-left: 4px;
         }
 
         .cand-score {
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 700;
           color: var(--color-primary);
         }
 
         .cand-sub-meta {
-          font-size: 10.5px;
+          font-size: 11px;
           color: var(--text-muted);
         }
 
         .flank-compare-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 12px;
+          gap: 14px;
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .flank-compare-grid {
             grid-template-columns: 1fr;
           }
@@ -671,7 +738,7 @@ export const ImageReview: React.FC = () => {
           border: 1px solid var(--border-default);
           border-radius: var(--radius-sm);
           overflow: hidden;
-          background: var(--bg-surface);
+          background: #FFFFFF;
         }
 
         .panel-header {
@@ -688,12 +755,11 @@ export const ImageReview: React.FC = () => {
 
         .image-frame {
           position: relative;
-          height: 240px;
-          background: #EEF2EF;
+          height: 220px;
+          background: #000000;
           display: flex;
           align-items: center;
           justify-content: center;
-          overflow: hidden;
         }
 
         .compare-img {
@@ -704,32 +770,26 @@ export const ImageReview: React.FC = () => {
 
         .overlay-flank-box {
           position: absolute;
-          inset: 20px;
-          border: 1.5px dashed #D97706;
-          pointer-events: none;
-          display: flex;
-          align-items: flex-end;
-          padding: 4px;
+          bottom: 8px;
+          left: 8px;
+          background: rgba(0, 0, 0, 0.7);
+          padding: 2px 6px;
+          border-radius: 2px;
         }
 
         .bounding-label {
-          background: rgba(0, 0, 0, 0.7);
-          color: #FFFFFF;
-          font-family: var(--font-mono);
-          font-size: 9px;
-          padding: 1px 4px;
-          border-radius: 2px;
+          font-size: 9.5px;
+          color: #86EFAC;
+          font-weight: 600;
         }
 
         .empty-registry-state {
           display: flex;
           flex-direction: column;
           align-items: center;
-          text-align: center;
-          padding: 16px;
-          gap: 8px;
-          color: var(--text-muted);
-          font-size: 11.5px;
+          gap: 6px;
+          color: #9CA3AF;
+          font-size: 12px;
         }
 
         .metadata-strip {
@@ -739,10 +799,10 @@ export const ImageReview: React.FC = () => {
           background: var(--bg-surface-subtle);
           border: 1px solid var(--border-default);
           border-radius: var(--radius-sm);
-          padding: 10px 12px;
+          padding: 8px 12px;
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .metadata-strip {
             grid-template-columns: 1fr;
           }
@@ -758,8 +818,9 @@ export const ImageReview: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 4px;
-          font-size: 10.5px;
+          font-size: 9.5px;
           color: var(--text-muted);
+          text-transform: uppercase;
         }
 
         .cell-value {
@@ -775,8 +836,21 @@ export const ImageReview: React.FC = () => {
           padding-top: 4px;
         }
 
-        .text-warning { color: var(--status-warning-text); }
-        .text-danger { color: var(--status-critical-text); }
+        .text-danger {
+          color: var(--status-critical-text);
+        }
+
+        .text-warning {
+          color: #92400E;
+        }
+
+        .text-forest {
+          color: var(--color-primary);
+        }
+
+        .font-mono {
+          font-family: var(--font-mono);
+        }
       `}</style>
     </div>
   );

@@ -7,7 +7,6 @@ import {
   ArrowRight,
   ShieldCheck,
   Eye,
-  Calendar,
   CheckCircle2,
   Database,
   Info
@@ -50,7 +49,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="kpi-value-row">
             <span className="kpi-value telemetry-num">{mockOverviewStats.totalCatalogedTigers}</span>
-            <span className="badge badge-forest">Deterministic IDs</span>
+            <span className="badge badge-forest font-mono">Deterministic IDs</span>
           </div>
           <div className="kpi-subtext">
             <span>{mockOverviewStats.maleCount} Males</span> • <span>{mockOverviewStats.femaleCount} Females</span> • <span>{mockOverviewStats.subAdultCount} Sub-Adult</span>
@@ -69,10 +68,10 @@ export const Dashboard: React.FC = () => {
             <span className="kpi-value telemetry-num">
               {activeTraps} <span className="kpi-denom">/ {mockOverviewStats.totalCameraStations}</span>
             </span>
-            <span className="badge badge-forest">92.3% Active</span>
+            <span className="badge badge-forest font-mono">92.3% Active</span>
           </div>
           <div className="kpi-subtext">
-            <span>2 stations scheduled for scheduled maintenance</span>
+            <span>2 stations scheduled for routine service</span>
           </div>
         </div>
 
@@ -86,7 +85,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="kpi-value-row">
             <span className="kpi-value telemetry-num">{mockOverviewStats.observationsPast30Days}</span>
-            <span className="badge badge-amber">{mockOverviewStats.pendingReviewCount} Pending Review</span>
+            <span className="badge badge-amber font-mono">{mockOverviewStats.pendingReviewCount} Pending Review</span>
           </div>
           <div className="kpi-subtext">
             <span>High capture rate in Turia & Karmajhiri beats</span>
@@ -103,7 +102,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="kpi-value-row">
             <span className="kpi-value telemetry-num">{mockOverviewStats.activeAlertsCount}</span>
-            <span className="badge badge-red">1 High Priority</span>
+            <span className="badge badge-red font-mono">1 High Priority</span>
           </div>
           <div className="kpi-subtext">
             <span>Boundary dispersal and buffer proximity</span>
@@ -135,7 +134,7 @@ export const Dashboard: React.FC = () => {
                 <tr>
                   <th>Time Recorded</th>
                   <th>Top Candidate ID</th>
-                  <th>Camera Station & Zone</th>
+                  <th>Camera Station & Sector</th>
                   <th>Flank</th>
                   <th>Confidence</th>
                   <th>Status</th>
@@ -153,8 +152,8 @@ export const Dashboard: React.FC = () => {
                           <img src={s.thumbnailUrl} alt={s.topCandidateId} className="tiger-thumb" />
                         </div>
                         <div>
-                          <div className="tiger-code-txt">{s.topCandidateId}</div>
-                          <div className="tiger-sub-txt">
+                          <div className="tiger-code-txt font-mono">{s.topCandidateId}</div>
+                          <div className="tiger-sub-txt font-mono">
                             {mockTigers.find(t => t.id === s.topCandidateId)?.stripeSignature}
                           </div>
                         </div>
@@ -165,7 +164,7 @@ export const Dashboard: React.FC = () => {
                       <span className="zone-pill">{s.zone} Sector</span>
                     </td>
                     <td>
-                      <span className="badge badge-subtle">{s.flankSide}</span>
+                      <span className="badge badge-subtle font-mono">{s.flankSide}</span>
                     </td>
                     <td>
                       <span className="telemetry-num font-semibold text-forest">
@@ -174,13 +173,13 @@ export const Dashboard: React.FC = () => {
                     </td>
                     <td>
                       {s.isAmbiguous ? (
-                        <span className="badge badge-amber">Ambiguous</span>
+                        <span className="badge badge-amber font-mono">Ambiguous</span>
                       ) : s.reviewStatus === 'VERIFIED' ? (
-                        <span className="badge badge-forest">
+                        <span className="badge badge-forest font-mono">
                           <CheckCircle2 size={11} /> Verified
                         </span>
                       ) : (
-                        <span className="badge badge-subtle">Pending</span>
+                        <span className="badge badge-subtle font-mono">Pending</span>
                       )}
                     </td>
                   </tr>
@@ -211,7 +210,7 @@ export const Dashboard: React.FC = () => {
               {criticalAlerts.map((alert) => (
                 <div key={alert.id} className={`alert-entry ${alert.severity.toLowerCase()}`}>
                   <div className="alert-entry-header">
-                    <span className={`badge ${alert.severity === 'HIGH' ? 'badge-red' : alert.severity === 'MEDIUM' ? 'badge-amber' : 'badge-subtle'}`}>
+                    <span className={`badge ${alert.severity === 'HIGH' ? 'badge-red' : alert.severity === 'MEDIUM' ? 'badge-amber' : 'badge-subtle'} font-mono`}>
                       {alert.severity}
                     </span>
                     <span className="alert-time telemetry-num">
@@ -384,7 +383,6 @@ export const Dashboard: React.FC = () => {
         }
 
         .tiger-code-txt {
-          font-family: var(--font-mono);
           font-size: 12px;
           font-weight: 700;
           color: var(--text-primary);
@@ -409,6 +407,10 @@ export const Dashboard: React.FC = () => {
 
         .font-semibold {
           font-weight: 600;
+        }
+
+        .font-mono {
+          font-family: var(--font-mono);
         }
 
         .right-col-stack {
