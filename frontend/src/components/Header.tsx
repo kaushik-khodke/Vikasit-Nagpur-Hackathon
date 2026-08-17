@@ -2,9 +2,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Menu,
-  Bell,
-  MapPin,
-  Clock
+  Bell
 } from 'lucide-react';
 import { mockAlerts } from '../data/mockData';
 
@@ -64,11 +62,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   };
 
   const pageInfo = getPageInfo(location.pathname);
-  const currentTime = new Date().toLocaleTimeString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
 
   return (
     <header className="tt-header">
@@ -90,23 +83,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       </div>
 
       <div className="header-right">
-        {/* Reserve Jurisdiction Pill */}
-        <div className="reserve-badge-pill">
-          <MapPin size={12} className="pill-icon" />
-          <span className="pill-text">Pench Tiger Reserve</span>
-          <span className="pill-sub">Seoni / Chhindwara</span>
-        </div>
-
-        {/* Live System Status */}
-        <div className="system-status-indicator" title="System operational with prototype dataset">
-          <span className="status-dot online" />
-          <span className="status-text">System Active</span>
-          <span className="time-sub">
-            <Clock size={11} />
-            <span>{currentTime}</span>
-          </span>
-        </div>
-
         {/* Quick Alert Bell */}
         <button
           className="header-icon-btn"
@@ -137,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 20px;
+          padding: 0 24px;
           position: sticky;
           top: 0;
           z-index: 50;
@@ -156,6 +132,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           border-radius: var(--radius-sm);
           background: var(--bg-surface-subtle);
           border: 1px solid var(--border-default);
+          transition: all var(--transition-fast);
+        }
+
+        .menu-toggle-btn:hover {
+          color: var(--text-primary);
+          border-color: var(--border-active);
         }
 
         .page-heading-group {
@@ -187,64 +169,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           gap: 12px;
         }
 
-        .reserve-badge-pill {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
-          padding: 4px 8px;
-          border-radius: var(--radius-sm);
-          font-size: 11.5px;
-        }
-
-        .pill-icon {
-          color: var(--color-primary);
-        }
-
-        .pill-text {
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .pill-sub {
-          font-size: 10.5px;
-          color: var(--text-muted);
-          border-left: 1px solid var(--border-default);
-          padding-left: 5px;
-        }
-
-        .system-status-indicator {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: var(--color-primary-bg);
-          border: 1px solid #C4DEC0;
-          padding: 4px 9px;
-          border-radius: var(--radius-sm);
-          font-size: 11.5px;
-        }
-
-        .status-text {
-          font-weight: 600;
-          color: var(--color-primary);
-        }
-
-        .time-sub {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          font-family: var(--font-mono);
-          font-size: 10px;
-          color: var(--text-muted);
-          border-left: 1px solid #C4DEC0;
-          padding-left: 6px;
-        }
-
         .header-icon-btn {
           position: relative;
           color: var(--text-secondary);
-          padding: 6px;
+          padding: 7px;
           border-radius: var(--radius-sm);
           background: var(--bg-surface-subtle);
           border: 1px solid var(--border-default);
@@ -257,6 +185,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         .header-icon-btn:hover {
           color: var(--text-primary);
           border-color: var(--border-active);
+          background: #E8F2EC;
         }
 
         .alert-badge {
@@ -281,21 +210,21 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 3px 6px 3px 3px;
+          padding: 3px 8px 3px 3px;
           background: var(--bg-surface-subtle);
           border: 1px solid var(--border-default);
           border-radius: var(--radius-sm);
         }
 
         .user-avatar {
-          width: 26px;
-          height: 26px;
+          width: 28px;
+          height: 28px;
           border-radius: var(--radius-sm);
           background: var(--color-primary);
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 10px;
+          font-size: 11px;
           font-weight: 700;
           color: #FFFFFF;
           font-family: var(--font-mono);
@@ -304,7 +233,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         .user-info {
           display: flex;
           flex-direction: column;
-          padding-right: 4px;
         }
 
         .user-name {
@@ -324,10 +252,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           .menu-toggle-btn {
             display: flex;
           }
-
-          .reserve-badge-pill {
-            display: none;
-          }
         }
 
         @media (max-width: 640px) {
@@ -336,10 +260,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           }
 
           .user-info {
-            display: none;
-          }
-
-          .system-status-indicator .time-sub {
             display: none;
           }
         }

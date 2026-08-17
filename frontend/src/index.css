@@ -61,6 +61,7 @@
 
   /* Layout Dimensions */
   --sidebar-width: 260px;
+  --sidebar-collapsed-width: 68px;
   --header-height: 64px;
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -68,6 +69,7 @@
   --radius-full: 9999px;
 
   --transition-fast: 150ms ease;
+  --transition-normal: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* CSS Reset & Defaults */

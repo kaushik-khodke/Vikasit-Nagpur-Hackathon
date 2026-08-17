@@ -23,6 +23,7 @@ export const ImageReview: React.FC = () => {
   const [tigersState, setTigersState] = useState<TigerProfile[]>([]);
   const [selectedSightingId, setSelectedSightingId] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'VERIFIED'>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -205,6 +206,7 @@ export const ImageReview: React.FC = () => {
           <div className="stream-header">
             <h3 className="tt-card-title">
               <span>Observation Feed</span>
+              <span className="feed-count badge badge-subtle">{filteredSightings.length}</span>
             </h3>
             <div className="stream-search">
               <Search size={13} className="text-muted" />
@@ -240,37 +242,38 @@ export const ImageReview: React.FC = () => {
                     <span className="item-flank-tag">{s.flankSide}</span>
                   </div>
 
-                  <div className="item-info">
-                    <div className="item-header-row">
-                      <span className="item-candidate-id font-mono">{s.topCandidateId}</span>
-                      <span className="telemetry-num match-pct">
-                        {(s.topCandidateConfidence * 100).toFixed(0)}% Score
-                      </span>
-                    </div>
+                    <div className="item-info">
+                      <div className="item-header-row">
+                        <span className="item-candidate-id font-mono">{s.topCandidateId}</span>
+                        <span className="telemetry-num match-pct">
+                          {(s.topCandidateConfidence * 100).toFixed(0)}% Score
+                        </span>
+                      </div>
 
-                    <div className="item-station-line">
-                      <Camera size={11} className="text-muted" />
-                      <span>{s.cameraTrapName}</span>
-                    </div>
+                      <div className="item-station-line">
+                        <Camera size={11} className="text-muted" />
+                        <span>{s.cameraTrapName}</span>
+                      </div>
 
-                    <div className="item-meta-row">
-                      <span className="item-time">
-                        {new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      {s.isAmbiguous ? (
-                        <span className="badge badge-amber">Ambiguous</span>
-                      ) : s.reviewStatus === 'VERIFIED' ? (
-                        <span className="badge badge-forest">Verified</span>
-                      ) : s.reviewStatus === 'REJECTED' ? (
-                        <span className="badge badge-red">Rejected</span>
-                      ) : (
-                        <span className="badge badge-subtle">Pending</span>
-                      )}
+                      <div className="item-meta-row">
+                        <span className="item-time">
+                          {new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {s.isAmbiguous ? (
+                          <span className="badge badge-amber">Ambiguous</span>
+                        ) : s.reviewStatus === 'VERIFIED' ? (
+                          <span className="badge badge-forest">Verified</span>
+                        ) : s.reviewStatus === 'REJECTED' ? (
+                          <span className="badge badge-red">Rejected</span>
+                        ) : (
+                          <span className="badge badge-subtle">Pending</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 

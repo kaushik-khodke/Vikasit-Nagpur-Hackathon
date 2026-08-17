@@ -5,7 +5,6 @@ import {
   ShieldCheck,
   Archive,
   AlertCircle,
-  Info,
   CheckCircle2,
   RefreshCw,
   RotateCcw,
