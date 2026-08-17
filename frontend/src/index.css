@@ -1,0 +1,390 @@
+/* ==========================================================================
+   TIGER TRACKER — PENCH TIGER RESERVE INFORMATION SYSTEM
+   Formal Wildlife Monitoring & Scientific Management Platform
+   ========================================================================== */
+
+:root {
+  /* Color Palette — Formal Forest Monitoring Palette */
+  --bg-page: #F7F9F7;
+  --bg-surface: #FFFFFF;
+  --bg-surface-subtle: #F0F4F1;
+  --bg-sidebar: #13462D;
+  --bg-sidebar-hover: #185536;
+  --bg-sidebar-active: #1B5E3C;
+  --bg-header: #FFFFFF;
+  --bg-input: #FFFFFF;
+  
+  /* Primary & Secondary Forest Greens */
+  --color-primary: #1B5E3C;
+  --color-primary-dark: #13462D;
+  --color-primary-light: #3F7D58;
+  --color-primary-bg: #E8F2EC;
+
+  /* Borders & Dividers */
+  --border-subtle: #E6EDE8;
+  --border-default: #DCE5DF;
+  --border-active: #3F7D58;
+  --border-focus: #1B5E3C;
+
+  /* Typography Colors */
+  --text-primary: #26332C;
+  --text-secondary: #475850;
+  --text-muted: #68756D;
+  --text-inverse: #FFFFFF;
+
+  /* Status Colors — Restrained Scientific Tones */
+  --status-success-text: #166534;
+  --status-success-bg: #DCFCE7;
+  --status-success-border: #BBF7D0;
+
+  --status-warning-text: #9A3412;
+  --status-warning-bg: #FEF3C7;
+  --status-warning-border: #FDE68A;
+
+  --status-critical-text: #991B1B;
+  --status-critical-bg: #FEE2E2;
+  --status-critical-border: #FECACA;
+
+  --status-info-text: #075985;
+  --status-info-bg: #E0F2FE;
+  --status-info-border: #BAE6FD;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, Menlo, Monaco, monospace;
+
+  /* Clean Restrained Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+
+  /* Layout Dimensions */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 68px;
+  --header-height: 64px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  --transition-fast: 150ms ease;
+  --transition-normal: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* CSS Reset & Defaults */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  color: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-surface-subtle);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Base Card Style */
+.tt-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  box-shadow: var(--shadow-xs);
+}
+
+.tt-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.tt-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.tt-card-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Standard Badges & Indicators */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+.badge-forest {
+  background-color: var(--status-success-bg);
+  color: var(--status-success-text);
+  border: 1px solid var(--status-success-border);
+}
+
+.badge-amber {
+  background-color: var(--status-warning-bg);
+  color: var(--status-warning-text);
+  border: 1px solid var(--status-warning-border);
+}
+
+.badge-red {
+  background-color: var(--status-critical-bg);
+  color: var(--status-critical-text);
+  border: 1px solid var(--status-critical-border);
+}
+
+.badge-blue {
+  background-color: var(--status-info-bg);
+  color: var(--status-info-text);
+  border: 1px solid var(--status-info-border);
+}
+
+.badge-subtle {
+  background-color: var(--bg-surface-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+
+/* Status Dots */
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.online {
+  background-color: var(--color-primary);
+}
+
+.status-dot.warning {
+  background-color: #D97706;
+}
+
+.status-dot.danger {
+  background-color: #DC2626;
+}
+
+/* Formal Form & Control Elements */
+.tt-select {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.tt-select:focus {
+  border-color: var(--border-focus);
+}
+
+.tt-input {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.tt-input:focus {
+  border-color: var(--border-focus);
+}
+
+/* Standard Formal Buttons */
+.tt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.tt-btn-primary {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border: 1px solid var(--color-primary-dark);
+}
+
+.tt-btn-primary:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.tt-btn-secondary {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+}
+
+.tt-btn-secondary:hover {
+  background-color: var(--bg-surface-subtle);
+  border-color: var(--border-active);
+}
+
+.tt-btn-ghost {
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+}
+
+.tt-btn-ghost:hover {
+  background-color: var(--bg-surface-subtle);
+  color: var(--text-primary);
+}
+
+/* Tables */
+.tt-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+
+.tt-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border-default);
+  background-color: var(--bg-surface-subtle);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tt-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.tt-table tr:hover td {
+  background-color: #F8FAF9;
+}
+
+/* Prototype / Synthetic Data Label */
+.synthetic-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #F0F5F2;
+  border: 1px solid #D1E0D7;
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.synthetic-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: #DCEDE2;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #B8D8C4;
+}
+
+/* Monospace telemetry code */
+.telemetry-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Leaflet Container Fixes */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  z-index: 1;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-default);
+  font-size: 12px;
+}
+
+.leaflet-popup-content {
+  margin: 10px 12px;
+  line-height: 1.4;
+}
