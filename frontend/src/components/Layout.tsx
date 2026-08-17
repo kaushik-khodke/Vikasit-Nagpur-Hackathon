@@ -5,12 +5,36 @@ import { Header } from './Header';
 
 export const Layout: React.FC = () => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tigertracker_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('tigertracker_sidebar_collapsed', String(next));
+      } catch {
+        // ignore
+      }
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 300);
+      return next;
+    });
+  };
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       {/* Persistent Left Sidebar */}
       <Sidebar
         isOpen={isMobileSidebarOpen}
+        isCollapsed={isCollapsed}
+        onToggleCollapse={handleToggleCollapse}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
@@ -28,7 +52,7 @@ export const Layout: React.FC = () => {
           display: flex;
           min-height: 100vh;
           width: 100%;
-          background-color: var(--bg-app);
+          background-color: var(--bg-page);
         }
 
         .main-content-wrapper {
@@ -39,6 +63,10 @@ export const Layout: React.FC = () => {
           min-width: 0;
           min-height: 100vh;
           transition: margin-left var(--transition-normal);
+        }
+
+        .app-container.sidebar-collapsed .main-content-wrapper {
+          margin-left: var(--sidebar-collapsed-width);
         }
 
         .content-viewport {
@@ -52,7 +80,8 @@ export const Layout: React.FC = () => {
         }
 
         @media (max-width: 992px) {
-          .main-content-wrapper {
+          .main-content-wrapper,
+          .app-container.sidebar-collapsed .main-content-wrapper {
             margin-left: 0;
           }
           .content-viewport {
