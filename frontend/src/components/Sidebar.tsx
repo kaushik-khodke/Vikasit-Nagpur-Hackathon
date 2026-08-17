@@ -50,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
 
     fetchSidebarCounts();
-    const interval = setInterval(fetchSidebarCounts, 5000);
+    const interval = setInterval(fetchSidebarCounts, 30000);
     return () => clearInterval(interval);
   }, []);
 
