@@ -18,7 +18,8 @@ import {
   FileText,
   Clock,
   Camera,
-  FolderArchive
+  FolderArchive,
+  ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { mockCameraTraps, mockBatches } from '../data/mockData';
@@ -249,6 +250,7 @@ export const CameraProcessing: React.FC = () => {
       tigersDetected: tigersCount,
       status: 'COMPLETED',
       progressPercent: 100,
+      cameraCode: ''
     };
 
     const newFrames = [
