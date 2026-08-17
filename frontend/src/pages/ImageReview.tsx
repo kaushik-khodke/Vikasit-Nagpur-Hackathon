@@ -25,7 +25,6 @@ export const ImageReview: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'VERIFIED'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   // Load live sightings and registered tigers from backend
@@ -272,8 +271,7 @@ export const ImageReview: React.FC = () => {
                     </div>
                   </div>
                 );
-              })
-            )}
+              })}
           </div>
         </div>
 

@@ -20,7 +20,12 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  isOpen,
+  isCollapsed,
+  onToggleCollapse,
+  onCloseMobile
+}) => {
   const [batchesCount, setBatchesCount] = useState<number>(3);
   const [pendingReviewCount, setPendingReviewCount] = useState<number>(1);
   const [tigersCount, setTigersCount] = useState<number>(4);
@@ -227,6 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
             <div className="footer-collapsed">
               <span className="version-tag">v2.1</span>
             </div>
+          ) : (
             <div className="telemetry-details">
               <div className="detail-row">
                 <span className="detail-label">Data Mode:</span>
@@ -241,7 +247,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
                 <span className="detail-val">24 Active Stations</span>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="footer-copyright">
             <span>Pench Tiger Reserve</span>
