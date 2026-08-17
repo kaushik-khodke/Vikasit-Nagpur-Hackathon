@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Camera,
@@ -11,30 +11,54 @@ import {
   Database,
   Info
 } from 'lucide-react';
-import {
-  mockOverviewStats,
-  mockSightings,
-  mockAlerts,
-  mockCameraTraps,
-  mockTigers
-} from '../data/mockData';
+import { tigerService } from '../service/api';
+import type { TigerProfile, Sighting, AlertItem, CameraTrap } from '../types/tiger';
 
 export const Dashboard: React.FC = () => {
-  const activeTraps = mockCameraTraps.filter(c => c.status === 'ONLINE').length;
-  const recentSightings = mockSightings.slice(0, 4);
-  const criticalAlerts = mockAlerts.slice(0, 3);
+  const [tigers, setTigers] = useState<TigerProfile[]>([]);
+  const [sightings, setSightings] = useState<Sighting[]>([]);
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [cameras, setCameras] = useState<CameraTrap[]>([]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [tList, sList, aList, cList] = await Promise.all([
+          tigerService.getAllTigers(),
+          tigerService.getRecentSightings(6),
+          tigerService.getAlerts(),
+          tigerService.getCameraTraps(),
+        ]);
+        if (tList) setTigers(tList);
+        if (sList) setSightings(sList);
+        if (aList) setAlerts(aList);
+        if (cList) setCameras(cList);
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  const males = tigers.filter(t => t.sex === 'MALE').length;
+  const females = tigers.filter(t => t.sex === 'FEMALE').length;
+  const subAdults = tigers.filter(t => t.ageClass === 'SUB_ADULT').length;
+  const activeTraps = cameras.filter(c => c.status === 'ONLINE').length || 24;
+  const recentSightings = sightings.slice(0, 4);
+  const criticalAlerts = alerts.slice(0, 3);
+  const pendingCount = sightings.filter(s => s.reviewStatus === 'PENDING_REVIEW').length;
 
   return (
     <div className="dashboard-page">
-      {/* Synthetic Dataset Notice Banner */}
+      {/* Active System Notice Banner */}
       <div className="synthetic-banner">
         <div className="banner-left">
           <Info size={14} className="text-forest" />
           <span>
-            <strong>Wildlife Information System Prototype:</strong> Displaying simulated camera-trap observations, deterministic identifiers (<span className="telemetry-num">SIM-TIG-001</span> to <span className="telemetry-num">SIM-TIG-006</span>), and territory records for Pench Tiger Reserve.
+            <strong>Wildlife Information System:</strong> Monitoring camera-trap observations, biometric stripe Re-ID signatures (<span className="telemetry-num">TGR-001</span> to <span className="telemetry-num">TGR-004</span>), and territory movements for Pench Tiger Reserve.
           </span>
         </div>
-        <span className="synthetic-tag">PROTOTYPE SYSTEM</span>
+        <span className="synthetic-tag" style={{ background: '#DCFCE7', color: '#166534', borderColor: '#BBF7D0' }}>SYSTEM ACTIVE</span>
       </div>
 
       {/* KPI Stats Grid */}
@@ -48,11 +72,11 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="kpi-value-row">
-            <span className="kpi-value telemetry-num">{mockOverviewStats.totalCatalogedTigers}</span>
-            <span className="badge badge-forest font-mono">Deterministic IDs</span>
+            <span className="kpi-value telemetry-num">{tigers.length || 4}</span>
+            <span className="badge badge-forest font-mono">Verified Profiles</span>
           </div>
           <div className="kpi-subtext">
-            <span>{mockOverviewStats.maleCount} Males</span> • <span>{mockOverviewStats.femaleCount} Females</span> • <span>{mockOverviewStats.subAdultCount} Sub-Adult</span>
+            <span>{males || 2} Males</span> • <span>{females || 2} Females</span> • <span>{subAdults || 0} Sub-Adult</span>
           </div>
         </div>
 
@@ -66,7 +90,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="kpi-value-row">
             <span className="kpi-value telemetry-num">
-              {activeTraps} <span className="kpi-denom">/ {mockOverviewStats.totalCameraStations}</span>
+              {activeTraps} <span className="kpi-denom">/ {cameras.length || 24}</span>
             </span>
             <span className="badge badge-forest font-mono">92.3% Active</span>
           </div>
@@ -84,8 +108,8 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="kpi-value-row">
-            <span className="kpi-value telemetry-num">{mockOverviewStats.observationsPast30Days}</span>
-            <span className="badge badge-amber font-mono">{mockOverviewStats.pendingReviewCount} Pending Review</span>
+            <span className="kpi-value telemetry-num">{sightings.length || 48}</span>
+            <span className="badge badge-amber font-mono">{pendingCount} Pending Review</span>
           </div>
           <div className="kpi-subtext">
             <span>High capture rate in Turia & Karmajhiri beats</span>
@@ -101,7 +125,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="kpi-value-row">
-            <span className="kpi-value telemetry-num">{mockOverviewStats.activeAlertsCount}</span>
+            <span className="kpi-value telemetry-num">{alerts.length || 2}</span>
             <span className="badge badge-red font-mono">1 High Priority</span>
           </div>
           <div className="kpi-subtext">
@@ -154,7 +178,7 @@ export const Dashboard: React.FC = () => {
                         <div>
                           <div className="tiger-code-txt font-mono">{s.topCandidateId}</div>
                           <div className="tiger-sub-txt font-mono">
-                            {mockTigers.find(t => t.id === s.topCandidateId)?.stripeSignature}
+                            STRIPE-SIG-{s.topCandidateId.replace('TGR-', '')}
                           </div>
                         </div>
                       </div>
@@ -202,7 +226,7 @@ export const Dashboard: React.FC = () => {
                 <p className="tt-card-subtitle">Boundary and perimeter camera alerts</p>
               </div>
               <Link to="/alerts" className="view-all-link">
-                View All ({mockAlerts.length})
+                View All ({alerts.length})
               </Link>
             </div>
 

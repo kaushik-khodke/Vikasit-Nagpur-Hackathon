@@ -125,3 +125,8 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+
+
+.jpg
+.png

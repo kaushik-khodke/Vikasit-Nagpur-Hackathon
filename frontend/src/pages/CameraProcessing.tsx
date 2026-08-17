@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   UploadCloud,
-  FileCheck,
   HardDrive,
   ShieldCheck,
   Archive,
@@ -9,33 +8,84 @@ import {
   Info,
   CheckCircle2,
   RefreshCw,
-  RotateCcw
+  RotateCcw,
+  X,
+  Eye,
+  Activity,
+  Check
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { mockCameraTraps } from '../data/mockData';
-import { tigerService } from '../service/api';
+import { tigerService, API_BASE_URL } from '../service/api';
 import type { CameraProcessingBatch } from '../types/tiger';
 
 export const CameraProcessing: React.FC = () => {
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [batches, setBatches] = useState<CameraProcessingBatch[]>([]);
   const [selectedStation, setSelectedStation] = useState('ALL');
   const [activeTab, setActiveTab] = useState<'BATCHES' | 'QUARANTINE_LOG'>('BATCHES');
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
-  const [isIngesting, setIsIngesting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  // Live Streaming State
+  const [activeStreamSession, setActiveStreamSession] = useState<{
+    sessionId: string;
+    filename: string;
+    totalFrames: number;
+    fps: number;
+    isVideo: boolean;
+  } | null>(null);
+
+  const [streamTelemetry, setStreamTelemetry] = useState<{
+    processedFrames: number;
+    totalFrames: number;
+    progressPercent: number;
+    blankCount: number;
+    retainedCount: number;
+    tigersDetected: number;
+    detectedTigersList: string[];
+    status: string;
+  } | null>(null);
 
   // Fetch batches and processing stats from backend
-  useEffect(() => {
-    const loadBatches = async () => {
-      try {
-        const data = await tigerService.getProcessingBatches();
-        if (data && data.length > 0) {
-          setBatches(data);
-        }
-      } catch (err) {
-        console.error('Failed to load processing batches:', err);
+  const loadBatches = async () => {
+    try {
+      const data = await tigerService.getProcessingBatches();
+      if (data && data.length > 0) {
+        setBatches(data);
       }
-    };
+    } catch (err) {
+      console.error('Failed to load processing batches:', err);
+    }
+  };
+
+  useEffect(() => {
     loadBatches();
   }, []);
+
+  // Poll live stream telemetry when session is active
+  useEffect(() => {
+    if (!activeStreamSession) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const status = await tigerService.getStreamStatus(activeStreamSession.sessionId);
+        if (status) {
+          setStreamTelemetry(status);
+          if (status.status === 'COMPLETED') {
+            loadBatches();
+          }
+        }
+      } catch (err) {
+        console.error('Stream telemetry poll error:', err);
+      }
+    }, 600);
+
+    return () => clearInterval(interval);
+  }, [activeStreamSession]);
 
   // Aggregated screening and quarantine metrics computed dynamically
   const totalImgs = batches.reduce((acc, b) => acc + b.totalImages, 0);
@@ -45,44 +95,59 @@ export const CameraProcessing: React.FC = () => {
   const totalReview = batches.reduce((acc, b) => acc + b.imagesRequiringReview, 0);
   const totalTigers = batches.reduce((acc, b) => acc + b.tigersDetected, 0);
 
-  const handleSimulateUpload = async () => {
-    setIsIngesting(true);
-    setFeedbackMsg('Screening raw SD-card dump... Running MegaDetector v6 triage and blank quarantine.');
+  // Handle Real File Upload & Stream Launch
+  const processUploadedFile = async (file: File) => {
+    setIsUploading(true);
+    setFeedbackMsg(`Uploading and initializing real-time AI stream for ${file.name}...`);
 
     try {
       const stationObj = mockCameraTraps.find(c => c.id === selectedStation);
-      const res = await tigerService.triggerBatchIngest({
-        cameraCode: selectedStation === 'ALL' ? 'CAM-01' : selectedStation,
-        stationName: stationObj ? `${stationObj.name} (${stationObj.id})` : undefined,
-      });
+      const res = await tigerService.uploadMediaFile(
+        file,
+        selectedStation === 'ALL' ? 'CAM-01' : selectedStation,
+        stationObj ? `${stationObj.name} (${stationObj.id})` : undefined
+      );
 
-      if (res.batch) {
-        setBatches(prev => [res.batch!, ...prev]);
-      } else {
-        // Fallback optimistic batch addition
-        const newBatch: CameraProcessingBatch = {
-          batchId: `BATCH-2026-0817-${String.fromCharCode(65 + (batches.length % 26))}`,
-          uploadedAt: new Date().toISOString(),
-          uploadedBy: 'RFO Officer R. Sharma (Pench Patrol)',
-          trapStation: selectedStation === 'ALL' ? 'Turia Core Waterhole (CAM-01)' : `Camera Station ${selectedStation}`,
-          totalImages: 280,
-          blankImages: 165,
-          imagesRetained: 115,
-          imagesQuarantined: 165,
-          imagesRequiringReview: 6,
-          tigersDetected: 8,
-          status: 'COMPLETED',
-          progressPercent: 100
-        };
-        setBatches(prev => [newBatch, ...prev]);
+      if (res.success && res.sessionId) {
+        setActiveStreamSession({
+          sessionId: res.sessionId,
+          filename: res.filename,
+          totalFrames: res.totalFrames,
+          fps: res.fps,
+          isVideo: res.isVideo,
+        });
+        setStreamTelemetry({
+          processedFrames: 0,
+          totalFrames: res.totalFrames,
+          progressPercent: 0,
+          blankCount: 0,
+          retainedCount: 0,
+          tigersDetected: 0,
+          detectedTigersList: [],
+          status: 'PROCESSING',
+        });
+        setFeedbackMsg(`Live AI Detection Stream started for ${file.name}.`);
       }
-
-      setFeedbackMsg(res.message || 'Successfully ingested SD dump. 165 blank frames quarantined.');
-    } catch (err) {
-      setFeedbackMsg('Ingestion completed. Reversible screening archive updated.');
+    } catch (err: any) {
+      console.error('Upload failed:', err);
+      setFeedbackMsg(`Upload failed: ${err.message || 'Error processing file.'}`);
     } finally {
-      setIsIngesting(false);
+      setIsUploading(false);
       setTimeout(() => setFeedbackMsg(null), 5000);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processUploadedFile(e.target.files[0]);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processUploadedFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -114,6 +179,15 @@ export const CameraProcessing: React.FC = () => {
 
   return (
     <div className="processing-page">
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*,image/*"
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
+
       {/* Operational Ingest Status */}
       <div className="synthetic-banner">
         <div className="banner-left">
@@ -129,6 +203,130 @@ export const CameraProcessing: React.FC = () => {
         <div className="feedback-toast">
           <CheckCircle2 size={14} />
           <span>{feedbackMsg}</span>
+        </div>
+      )}
+
+      {/* Embedded Live Real-Time Stream & Detection Feed */}
+      {activeStreamSession && (
+        <div className="tt-card live-stream-console">
+          <div className="stream-header-bar">
+            <div className="stream-title-group">
+              <span className="live-pulse-dot" />
+              <h3 className="stream-title">
+                Live AI Detection Feed — {activeStreamSession.filename}
+              </h3>
+              <span className="badge badge-forest">
+                {streamTelemetry?.status === 'COMPLETED' ? 'COMPLETED' : 'INFERENCE STREAM ACTIVE'}
+              </span>
+            </div>
+
+            <div className="stream-controls">
+              <button
+                className="tt-btn tt-btn-secondary btn-sm"
+                onClick={() => navigate('/image-review')}
+              >
+                <Eye size={13} />
+                <span>Open Biometric Review</span>
+              </button>
+              <button
+                className="close-stream-btn"
+                onClick={() => setActiveStreamSession(null)}
+                title="Close Live Stream Player"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div className="stream-content-grid">
+            {/* Live Video Player Frame */}
+            <div className="stream-player-box">
+              <img
+                src={`${API_BASE_URL}/api/v1/stream/live/${activeStreamSession.sessionId}`}
+                alt="Live AI Inference Stream"
+                className="stream-video-element"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+              <div className="stream-overlay-hud">
+                <div className="hud-badge">
+                  <Activity size={12} className="text-forest" />
+                  <span>MEGA-DETECTOR V6 + RE-ID CONVNEXT</span>
+                </div>
+                <div className="hud-fps font-mono">
+                  {activeStreamSession.fps ? `${activeStreamSession.fps.toFixed(0)} FPS` : '30 FPS'}
+                </div>
+              </div>
+            </div>
+
+            {/* Live Telemetry & Detection Readout */}
+            <div className="stream-telemetry-panel">
+              <div className="telemetry-section-title">REAL-TIME INFERENCE METRICS</div>
+
+              <div className="live-metric-row">
+                <span className="live-label">Processing Progress:</span>
+                <span className="live-value telemetry-num font-mono">
+                  {streamTelemetry ? `${streamTelemetry.processedFrames} / ${streamTelemetry.totalFrames} frames (${streamTelemetry.progressPercent}%)` : 'Processing...'}
+                </span>
+              </div>
+
+              <div className="progress-bar-track">
+                <div
+                  className="progress-bar-fill"
+                  style={{ width: `${streamTelemetry?.progressPercent || 5}%` }}
+                />
+              </div>
+
+              <div className="telemetry-stats-grid">
+                <div className="t-stat-card">
+                  <span className="t-stat-num text-forest font-mono">
+                    {streamTelemetry?.tigersDetected || 0}
+                  </span>
+                  <span className="t-stat-label">Tigers Detected</span>
+                </div>
+
+                <div className="t-stat-card">
+                  <span className="t-stat-num text-amber font-mono">
+                    {streamTelemetry?.blankCount || 0}
+                  </span>
+                  <span className="t-stat-label">Blanks Quarantined</span>
+                </div>
+
+                <div className="t-stat-card">
+                  <span className="t-stat-num font-mono">
+                    {streamTelemetry?.retainedCount || 0}
+                  </span>
+                  <span className="t-stat-label">Fauna Retained</span>
+                </div>
+              </div>
+
+              {/* Detected Individuals Badge List */}
+              <div className="detected-individuals-box">
+                <span className="individuals-label">Identified Tiger Profiles:</span>
+                <div className="individuals-tag-list">
+                  {streamTelemetry?.detectedTigersList && streamTelemetry.detectedTigersList.length > 0 ? (
+                    streamTelemetry.detectedTigersList.map(tCode => (
+                      <span key={tCode} className="tiger-id-pill font-mono">
+                        🐅 {tCode} (Verified Flank Match)
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-muted" style={{ fontSize: '11px' }}>
+                      Scanning camera-trap video stream for tiger stripe patterns...
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {streamTelemetry?.status === 'COMPLETED' && (
+                <div className="stream-complete-alert">
+                  <Check size={14} className="text-forest" />
+                  <span>Batch processed & proof saved to <code>data/evidence_recordings/</code></span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -177,34 +375,37 @@ export const CameraProcessing: React.FC = () => {
           <div className="tt-card-header">
             <h3 className="tt-card-title">
               <UploadCloud size={16} className="text-forest" />
-              <span>Import Camera-Trap SD Dump</span>
+              <span>Import Camera-Trap Video / Media Dump</span>
             </h3>
-            <span className="badge badge-subtle">SD / FAT32 / Archive</span>
+            <span className="badge badge-subtle">MP4 / WEBM / JPEG / SD</span>
           </div>
 
-          <div className="dropzone-box">
-            <UploadCloud size={28} className="dropzone-icon" />
+          <div
+            className={`dropzone-box ${dragOver ? 'drag-over' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <UploadCloud size={32} className="dropzone-icon" />
             <div className="dropzone-main-text">
-              Select Camera-Trap Media Directory or ZIP File
+              Select or Drop Camera-Trap Video (.mp4, .webm) or Images
             </div>
             <div className="dropzone-sub-text">
-              Exif metadata, camera station IDs, and camera timestamps will be indexed and screened.
+              Uploading starts the real-time AI live feed with bounding boxes, flank triage, and automatic proof capture.
             </div>
             <div className="dropzone-actions">
               <button
                 className="tt-btn tt-btn-primary"
-                onClick={handleSimulateUpload}
-                disabled={isIngesting}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+                disabled={isUploading}
               >
-                {isIngesting ? <RefreshCw size={14} className="spin-icon" /> : <UploadCloud size={14} />}
-                <span>{isIngesting ? 'Screening Dump...' : 'Simulate Ingest from SD Card'}</span>
-              </button>
-              <button
-                className="tt-btn tt-btn-secondary"
-                onClick={handleSimulateUpload}
-                disabled={isIngesting}
-              >
-                <span>Select ZIP Archive</span>
+                {isUploading ? <RefreshCw size={14} className="spin-icon" /> : <UploadCloud size={14} />}
+                <span>{isUploading ? 'Uploading Media...' : 'Upload Video / Images & Start AI Stream'}</span>
               </button>
             </div>
           </div>
@@ -258,7 +459,7 @@ export const CameraProcessing: React.FC = () => {
             </div>
 
             <div className="policy-item">
-              <FileCheck size={16} className="text-forest policy-icon" />
+              <HardDrive size={16} className="text-forest policy-icon" />
               <div>
                 <strong>Exif & Audit Trail Preservation</strong>
                 <p>
@@ -268,7 +469,7 @@ export const CameraProcessing: React.FC = () => {
             </div>
 
             <div className="policy-item">
-              <AlertCircle size={16} className="text-warning policy-icon" />
+              <AlertCircle size={16} className="text-amber policy-icon" />
               <div>
                 <strong>Low-Confidence Frame Triage</strong>
                 <p>
@@ -280,26 +481,26 @@ export const CameraProcessing: React.FC = () => {
         </div>
       </div>
 
-      {/* Batch Processing Table */}
+      {/* Batch Ingestion Log Table */}
       <div className="tt-card batches-card">
         <div className="tt-card-header">
-          <div>
+          <div className="header-left-group">
             <h3 className="tt-card-title">
               <HardDrive size={15} className="text-forest" />
               <span>Camera-Trap Batch Ingestion Log</span>
             </h3>
-            <p className="tt-card-subtitle">Dataset import screening and reversible quarantine tracking</p>
+            <span className="card-subtitle">Dataset import screening and reversible quarantine tracking</span>
           </div>
 
-          <div className="view-toggle-pills">
+          <div className="filter-pill-group">
             <button
-              className={`pill-btn ${activeTab === 'BATCHES' ? 'active' : ''}`}
+              className={`filter-pill ${activeTab === 'BATCHES' ? 'active' : ''}`}
               onClick={() => setActiveTab('BATCHES')}
             >
               All Batches ({displayedBatches.length})
             </button>
             <button
-              className={`pill-btn ${activeTab === 'QUARANTINE_LOG' ? 'active' : ''}`}
+              className={`filter-pill ${activeTab === 'QUARANTINE_LOG' ? 'active' : ''}`}
               onClick={() => setActiveTab('QUARANTINE_LOG')}
             >
               Quarantine Audit Log
@@ -307,117 +508,71 @@ export const CameraProcessing: React.FC = () => {
           </div>
         </div>
 
-        {activeTab === 'BATCHES' ? (
-          <div className="batches-table-wrapper">
-            <table className="tt-table">
-              <thead>
-                <tr>
-                  <th>Batch ID</th>
-                  <th>Camera Station / Range</th>
-                  <th>Uploaded By</th>
-                  <th>Total Imgs</th>
-                  <th>Retained (Fauna)</th>
-                  <th>Quarantined Blanks</th>
-                  <th>Review Queue</th>
-                  <th>Tigers Found</th>
-                  <th>Progress</th>
-                  <th>Status</th>
+        <div className="batches-table-wrapper">
+          <table className="tt-table">
+            <thead>
+              <tr>
+                <th>BATCH ID</th>
+                <th>CAMERA STATION / RANGE</th>
+                <th>UPLOADED BY</th>
+                <th className="num-col">TOTAL IMGS</th>
+                <th className="num-col">RETAINED (FAUNA)</th>
+                <th className="num-col">QUARANTINED BLANKS</th>
+                <th className="num-col">REVIEW QUEUE</th>
+                <th className="num-col">TIGERS FOUND</th>
+                <th>PROGRESS</th>
+                <th>STATUS</th>
+                {activeTab === 'QUARANTINE_LOG' && <th>ACTIONS</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {displayedBatches.map((b) => (
+                <tr key={b.batchId}>
+                  <td className="font-mono batch-id-cell">{b.batchId}</td>
+                  <td>{b.trapStation}</td>
+                  <td className="uploaded-by-cell">{b.uploadedBy}</td>
+                  <td className="num-col telemetry-num">{b.totalImages}</td>
+                  <td className="num-col telemetry-num text-forest font-semibold">{b.imagesRetained}</td>
+                  <td className="num-col telemetry-num text-amber">{b.imagesQuarantined}</td>
+                  <td className="num-col telemetry-num">{b.imagesRequiringReview}</td>
+                  <td className="num-col telemetry-num font-semibold">
+                    <span className="tiger-count-badge">{b.tigersDetected}</span>
+                  </td>
+                  <td className="progress-cell">
+                    <div className="mini-progress-bar">
+                      <div
+                        className="mini-progress-fill"
+                        style={{ width: `${b.progressPercent}%` }}
+                      />
+                    </div>
+                  </td>
+                  <td>
+                    <span className="badge badge-forest">Completed</span>
+                  </td>
+                  {activeTab === 'QUARANTINE_LOG' && (
+                    <td>
+                      <button
+                        className="tt-btn tt-btn-secondary btn-sm"
+                        onClick={() => handleRestoreQuarantined(b.batchId)}
+                        title="Restore 10 quarantined frames back to review queue"
+                      >
+                        <RotateCcw size={12} />
+                        <span>Restore</span>
+                      </button>
+                    </td>
+                  )}
                 </tr>
-              </thead>
-              <tbody>
-                {displayedBatches.map((b) => (
-                  <tr key={b.batchId}>
-                    <td>
-                      <span className="batch-id-tag telemetry-num">{b.batchId}</span>
-                    </td>
-                    <td>
-                      <div className="station-title">{b.trapStation}</div>
-                      <div className="time-sub-tag">
-                        {new Date(b.uploadedAt).toLocaleDateString()} at {new Date(b.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </td>
-                    <td className="uploader-cell">{b.uploadedBy}</td>
-                    <td className="telemetry-num">{b.totalImages}</td>
-                    <td className="telemetry-num text-forest font-bold">{b.imagesRetained}</td>
-                    <td>
-                      <div className="quarantine-cell">
-                        <span className="telemetry-num text-muted">{b.imagesQuarantined}</span>
-                        <button
-                          className="restore-btn"
-                          title="Restore 10 sample frames from quarantine"
-                          onClick={() => handleRestoreQuarantined(b.batchId)}
-                        >
-                          <RotateCcw size={10} />
-                          <span>Restore</span>
-                        </button>
-                      </div>
-                    </td>
-                    <td className="telemetry-num text-info font-bold">{b.imagesRequiringReview}</td>
-                    <td>
-                      <span className="badge badge-amber telemetry-num">
-                        {b.tigersDetected} Detections
-                      </span>
-                    </td>
-                    <td className="progress-cell">
-                      <div className="progress-bar-container">
-                        <div
-                          className={`progress-bar-fill ${b.status === 'COMPLETED' ? 'completed' : 'processing'}`}
-                          style={{ width: `${b.progressPercent}%` }}
-                        />
-                      </div>
-                      <span className="telemetry-num progress-pct">{b.progressPercent}%</span>
-                    </td>
-                    <td>
-                      {b.status === 'COMPLETED' ? (
-                        <span className="badge badge-forest">Completed</span>
-                      ) : (
-                        <span className="badge badge-blue">
-                          <RefreshCw size={10} className="spin-icon" /> {b.status}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="quarantine-audit-view">
-            <div className="audit-header">
-              <Archive size={16} className="text-forest" />
-              <span>Archived Blank & Vegetation Captures (Reversible Storage)</span>
-            </div>
-            <div className="quarantine-cards-grid">
-              {displayedBatches.map(b => (
-                <div key={b.batchId} className="quarantine-card">
-                  <div className="q-head">
-                    <span className="font-mono font-bold">{b.batchId}</span>
-                    <span className="badge badge-subtle">{b.imagesQuarantined} Frames Quarantined</span>
-                  </div>
-                  <div className="q-station">{b.trapStation}</div>
-                  <div className="q-details">
-                    <div>Reason: Vegetation sway & heat triggers without fauna pixels</div>
-                    <div>Integrity: 100% Exif preserved in cold archive</div>
-                  </div>
-                  <button
-                    className="tt-btn tt-btn-secondary btn-sm"
-                    onClick={() => handleRestoreQuarantined(b.batchId)}
-                  >
-                    <RotateCcw size={12} />
-                    <span>Restore Samples to Review Queue</span>
-                  </button>
-                </div>
               ))}
-            </div>
-          </div>
-        )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <style>{`
         .processing-page {
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 16px;
         }
 
         .banner-left {
@@ -433,12 +588,257 @@ export const CameraProcessing: React.FC = () => {
           background: #DCFCE7;
           border: 1px solid #BBF7D0;
           color: #166534;
-          padding: 8px 14px;
+          padding: 10px 14px;
           border-radius: var(--radius-sm);
           font-size: 12px;
           font-weight: 500;
         }
 
+        /* Live Streaming Console */
+        .live-stream-console {
+          border: 1.5px solid var(--color-forest);
+          background: #0B1320;
+          color: #FFFFFF;
+          padding: 16px;
+        }
+
+        .stream-header-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 14px;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+          padding-bottom: 10px;
+        }
+
+        .stream-title-group {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .live-pulse-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: #22C55E;
+          box-shadow: 0 0 8px #22C55E;
+          animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+          0% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(1.2); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+
+        .stream-title {
+          font-size: 15px;
+          font-weight: 700;
+          color: #FFFFFF;
+          margin: 0;
+        }
+
+        .stream-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .close-stream-btn {
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.2);
+          color: #FFFFFF;
+          border-radius: var(--radius-sm);
+          padding: 4px 6px;
+          cursor: pointer;
+        }
+
+        .close-stream-btn:hover {
+          background: rgba(255,255,255,0.2);
+        }
+
+        .stream-content-grid {
+          display: grid;
+          grid-template-columns: 1.4fr 1fr;
+          gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+          .stream-content-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .stream-player-box {
+          position: relative;
+          background: #000000;
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+          min-height: 320px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .stream-video-element {
+          width: 100%;
+          height: auto;
+          max-height: 380px;
+          object-fit: contain;
+        }
+
+        .stream-overlay-hud {
+          position: absolute;
+          bottom: 8px;
+          left: 8px;
+          right: 8px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          pointer-events: none;
+        }
+
+        .hud-badge {
+          background: rgba(0,0,0,0.75);
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-size: 9.5px;
+          font-weight: 700;
+          color: #DCFCE7;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+        }
+
+        .hud-fps {
+          background: rgba(0,0,0,0.75);
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-size: 10px;
+          color: #FACC15;
+          font-weight: 700;
+        }
+
+        .stream-telemetry-panel {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          background: rgba(255,255,255,0.03);
+          border-radius: var(--radius-sm);
+          padding: 14px;
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .telemetry-section-title {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          font-weight: 700;
+          color: var(--color-forest);
+          letter-spacing: 0.05em;
+        }
+
+        .live-metric-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 11.5px;
+        }
+
+        .live-label {
+          color: #94A3B8;
+        }
+
+        .live-value {
+          color: #FFFFFF;
+          font-weight: 600;
+        }
+
+        .progress-bar-track {
+          width: 100%;
+          height: 6px;
+          background: rgba(255,255,255,0.1);
+          border-radius: 3px;
+          overflow: hidden;
+        }
+
+        .progress-bar-fill {
+          height: 100%;
+          background: var(--color-forest);
+          transition: width 0.3s;
+        }
+
+        .telemetry-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+        }
+
+        .t-stat-card {
+          background: rgba(255,255,255,0.05);
+          padding: 8px;
+          border-radius: 4px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .t-stat-num {
+          font-size: 16px;
+          font-weight: 700;
+        }
+
+        .t-stat-label {
+          font-size: 9px;
+          color: #94A3B8;
+        }
+
+        .detected-individuals-box {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          background: rgba(0,0,0,0.3);
+          padding: 8px 10px;
+          border-radius: 4px;
+        }
+
+        .individuals-label {
+          font-size: 10px;
+          font-weight: 600;
+          color: #94A3B8;
+        }
+
+        .individuals-tag-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+        }
+
+        .tiger-id-pill {
+          background: rgba(34, 197, 94, 0.2);
+          border: 1px solid rgba(34, 197, 94, 0.4);
+          color: #86EFAC;
+          font-size: 10.5px;
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-weight: 600;
+        }
+
+        .stream-complete-alert {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(34, 197, 94, 0.15);
+          border: 1px solid rgba(34, 197, 94, 0.3);
+          color: #DCFCE7;
+          padding: 6px 10px;
+          border-radius: 4px;
+          font-size: 11px;
+        }
+
+        /* Metrics grid */
         .metrics-summary-grid {
           display: grid;
           grid-template-columns: repeat(6, 1fr);
@@ -451,21 +851,20 @@ export const CameraProcessing: React.FC = () => {
           }
         }
 
-        @media (max-width: 680px) {
+        @media (max-width: 768px) {
           .metrics-summary-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr 1fr;
           }
         }
 
         .metric-box {
           display: flex;
           flex-direction: column;
-          gap: 3px;
-          padding: 12px 14px;
+          gap: 4px;
         }
 
         .m-label {
-          font-size: 10.5px;
+          font-size: 11px;
           color: var(--text-muted);
           font-weight: 500;
         }
@@ -474,72 +873,72 @@ export const CameraProcessing: React.FC = () => {
           font-size: 22px;
           font-weight: 700;
           color: var(--text-primary);
-          line-height: 1.15;
+          line-height: 1.1;
         }
 
         .m-sub {
-          font-size: 10px;
+          font-size: 10.5px;
           color: var(--text-muted);
-          margin-top: 2px;
         }
 
         .grid-2 {
           display: grid;
           grid-template-columns: 1.2fr 1fr;
-          gap: 14px;
+          gap: 16px;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 992px) {
           .grid-2 {
             grid-template-columns: 1fr;
           }
         }
 
-        .upload-card {
-          display: flex;
-          flex-direction: column;
-        }
-
         .dropzone-box {
-          border: 1.5px dashed var(--border-default);
+          border: 2px dashed var(--border-default);
           border-radius: var(--radius-sm);
-          background: var(--bg-surface-subtle);
           padding: 24px;
+          text-align: center;
+          background: var(--bg-surface-subtle);
+          cursor: pointer;
+          transition: all 0.2s;
           display: flex;
           flex-direction: column;
           align-items: center;
-          text-align: center;
-          margin: 12px 0 16px;
+          gap: 8px;
+        }
+
+        .dropzone-box:hover, .dropzone-box.drag-over {
+          border-color: var(--color-forest);
+          background: #F0FDF4;
         }
 
         .dropzone-icon {
           color: var(--color-forest);
-          margin-bottom: 8px;
         }
 
         .dropzone-main-text {
-          font-size: 13.5px;
           font-weight: 600;
+          font-size: 13.5px;
           color: var(--text-primary);
         }
 
         .dropzone-sub-text {
           font-size: 11.5px;
           color: var(--text-muted);
-          margin-top: 4px;
-          margin-bottom: 14px;
-          max-width: 380px;
+          max-width: 420px;
         }
 
         .dropzone-actions {
-          display: flex;
-          gap: 8px;
+          margin-top: 6px;
         }
 
         .upload-options-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 12px;
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px solid var(--border-default);
         }
 
         .option-field {
@@ -552,11 +951,6 @@ export const CameraProcessing: React.FC = () => {
           font-size: 11px;
           font-weight: 600;
           color: var(--text-muted);
-        }
-
-        .quarantine-policy-card {
-          display: flex;
-          flex-direction: column;
         }
 
         .policy-items-list {
@@ -598,159 +992,65 @@ export const CameraProcessing: React.FC = () => {
 
         .batches-table-wrapper {
           overflow-x: auto;
-          margin-top: 8px;
         }
 
-        .batch-id-tag {
-          font-weight: 600;
-          color: var(--color-forest);
+        .tt-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 11.5px;
         }
 
-        .station-title {
+        .tt-table th {
+          text-align: left;
+          padding: 8px 10px;
+          border-bottom: 1.5px solid var(--border-default);
+          color: var(--text-muted);
           font-weight: 600;
+          font-size: 10px;
+          letter-spacing: 0.03em;
+        }
+
+        .tt-table td {
+          padding: 10px;
+          border-bottom: 1px solid var(--border-subtle);
           color: var(--text-primary);
         }
 
-        .time-sub-tag {
-          font-size: 10.5px;
+        .num-col {
+          text-align: right;
+        }
+
+        .batch-id-cell {
+          font-weight: 600;
+        }
+
+        .uploaded-by-cell {
           color: var(--text-muted);
         }
 
-        .uploader-cell {
-          font-size: 11.5px;
-          color: var(--text-muted);
-        }
-
-        .quarantine-cell {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .restore-btn {
-          display: flex;
-          align-items: center;
-          gap: 3px;
-          background: none;
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-sm);
+        .tiger-count-badge {
+          background: #FEF3C7;
+          color: #92400E;
           padding: 2px 6px;
-          font-size: 10px;
-          color: var(--text-muted);
-          cursor: pointer;
-        }
-
-        .restore-btn:hover {
-          color: var(--color-forest);
-          border-color: var(--color-forest);
+          border-radius: 3px;
+          font-size: 11px;
         }
 
         .progress-cell {
-          width: 140px;
+          width: 100px;
         }
 
-        .progress-bar-container {
+        .mini-progress-bar {
+          width: 100%;
           height: 6px;
           background: var(--bg-surface-subtle);
           border-radius: 3px;
           overflow: hidden;
-          margin-bottom: 3px;
         }
 
-        .progress-bar-fill {
+        .mini-progress-fill {
           height: 100%;
-          border-radius: 3px;
-        }
-
-        .progress-bar-fill.completed {
           background: var(--color-forest);
-        }
-
-        .progress-bar-fill.processing {
-          background: #3B82F6;
-        }
-
-        .progress-pct {
-          font-size: 10px;
-          color: var(--text-muted);
-        }
-
-        .view-toggle-pills {
-          display: flex;
-          gap: 4px;
-          background: var(--bg-surface-subtle);
-          padding: 2px;
-          border-radius: var(--radius-sm);
-        }
-
-        .pill-btn {
-          border: none;
-          background: none;
-          font-size: 11px;
-          padding: 4px 10px;
-          border-radius: var(--radius-sm);
-          color: var(--text-muted);
-          cursor: pointer;
-          font-weight: 500;
-        }
-
-        .pill-btn.active {
-          background: var(--bg-surface);
-          color: var(--text-primary);
-          font-weight: 600;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .quarantine-audit-view {
-          margin-top: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .audit-header {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 12.5px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .quarantine-cards-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 12px;
-        }
-
-        .quarantine-card {
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-sm);
-          padding: 12px;
-          background: var(--bg-surface-subtle);
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .q-head {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .q-station {
-          font-size: 11.5px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .q-details {
-          font-size: 10.5px;
-          color: var(--text-muted);
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
         }
 
         .spin-icon {

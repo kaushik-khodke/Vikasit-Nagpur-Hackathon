@@ -170,5 +170,36 @@ export const tigerService = {
     } catch {
       return { success: true, message: `Restored ${count} frames from ${batchId} to Image Review queue.` };
     }
+  },
+
+  uploadMediaFile: async (
+    file: File,
+    cameraCode = 'CAM-01',
+    stationName?: string
+  ): Promise<{
+    success: boolean;
+    sessionId: string;
+    filename: string;
+    totalFrames: number;
+    fps: number;
+    isVideo: boolean;
+    streamUrl: string;
+  }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('cameraCode', cameraCode);
+    if (stationName) formData.append('stationName', stationName);
+
+    const response = await apiClient.post('/processing/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  getStreamStatus: async (sessionId: string): Promise<any> => {
+    const response = await apiClient.get(`/stream/status/${sessionId}`);
+    return response.data;
   }
 };
