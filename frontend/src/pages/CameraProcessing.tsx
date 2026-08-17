@@ -621,12 +621,12 @@ export const CameraProcessing: React.FC = () => {
           </table>
         </div>
       </div>
-
       <style>{`
         .processing-page {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          animation: fadeInUp 0.4s ease-out;
         }
 
         .banner-left {
@@ -639,21 +639,22 @@ export const CameraProcessing: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: #DCFCE7;
-          border: 1px solid #BBF7D0;
-          color: #166534;
+          background: rgba(16, 185, 129, 0.1);
+          border: 1px solid rgba(16, 185, 129, 0.2);
+          color: #34D399;
           padding: 10px 14px;
           border-radius: var(--radius-sm);
           font-size: 12px;
-          font-weight: 500;
+          font-weight: 600;
         }
 
         /* Live Streaming Console */
         .live-stream-console {
-          border: 1.5px solid var(--color-forest);
-          background: #0B1320;
+          border: 1.5px solid rgba(16, 185, 129, 0.3);
+          background: #060B13;
           color: #FFFFFF;
           padding: 16px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(16, 185, 129, 0.15);
         }
 
         .stream-header-bar {
@@ -661,7 +662,7 @@ export const CameraProcessing: React.FC = () => {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 14px;
-          border-bottom: 1px solid rgba(255,255,255,0.1);
+          border-bottom: 1px solid rgba(255,255,255,0.06);
           padding-bottom: 10px;
         }
 
@@ -675,8 +676,8 @@ export const CameraProcessing: React.FC = () => {
           width: 10px;
           height: 10px;
           border-radius: 50%;
-          background: #22C55E;
-          box-shadow: 0 0 8px #22C55E;
+          background: #10B981;
+          box-shadow: 0 0 8px #10B981;
           animation: pulse 1.5s infinite;
         }
 
@@ -687,7 +688,7 @@ export const CameraProcessing: React.FC = () => {
         }
 
         .stream-title {
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 700;
           color: #FFFFFF;
           margin: 0;
@@ -700,16 +701,21 @@ export const CameraProcessing: React.FC = () => {
         }
 
         .close-stream-btn {
-          background: rgba(255,255,255,0.1);
-          border: 1px solid rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
           color: #FFFFFF;
           border-radius: var(--radius-sm);
-          padding: 4px 6px;
+          padding: 5px 8px;
           cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
         }
 
         .close-stream-btn:hover {
-          background: rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.15);
+          border-color: rgba(255,255,255,0.25);
         }
 
         .stream-content-grid {
@@ -733,7 +739,7 @@ export const CameraProcessing: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 1px solid rgba(255,255,255,0.15);
+          border: 1px solid rgba(255,255,255,0.08);
         }
 
         .stream-video-element {
@@ -745,51 +751,54 @@ export const CameraProcessing: React.FC = () => {
 
         .stream-overlay-hud {
           position: absolute;
-          bottom: 8px;
-          left: 8px;
-          right: 8px;
+          bottom: 10px;
+          left: 10px;
+          right: 10px;
           display: flex;
           justify-content: space-between;
           align-items: center;
           pointer-events: none;
+          z-index: 10;
         }
 
         .hud-badge {
-          background: rgba(0,0,0,0.75);
-          padding: 3px 8px;
+          background: rgba(0,0,0,0.8);
+          padding: 4px 8px;
           border-radius: 4px;
           font-size: 9.5px;
           font-weight: 700;
-          color: #DCFCE7;
+          color: #34D399;
           display: flex;
           align-items: center;
           gap: 5px;
+          border: 1px solid rgba(255,255,255,0.08);
         }
 
         .hud-fps {
-          background: rgba(0,0,0,0.75);
-          padding: 3px 8px;
+          background: rgba(0,0,0,0.8);
+          padding: 4px 8px;
           border-radius: 4px;
           font-size: 10px;
-          color: #FACC15;
+          color: #FBBF24;
           font-weight: 700;
+          border: 1px solid rgba(255,255,255,0.08);
         }
 
         .stream-telemetry-panel {
           display: flex;
           flex-direction: column;
           gap: 12px;
-          background: rgba(255,255,255,0.03);
+          background: rgba(255,255,255,0.02);
           border-radius: var(--radius-sm);
           padding: 14px;
-          border: 1px solid rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.05);
         }
 
         .telemetry-section-title {
           font-family: var(--font-mono);
           font-size: 10px;
           font-weight: 700;
-          color: var(--color-forest);
+          color: var(--color-primary-light);
           letter-spacing: 0.05em;
         }
 
@@ -812,15 +821,16 @@ export const CameraProcessing: React.FC = () => {
         .progress-bar-track {
           width: 100%;
           height: 6px;
-          background: rgba(255,255,255,0.1);
+          background: rgba(255, 255, 255, 0.08);
           border-radius: 3px;
           overflow: hidden;
         }
 
         .progress-bar-fill {
           height: 100%;
-          background: var(--color-forest);
-          transition: width 0.3s;
+          background: linear-gradient(90deg, #10B981, #34D399);
+          transition: width 0.3s ease;
+          box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
         }
 
         .telemetry-stats-grid {
@@ -830,66 +840,79 @@ export const CameraProcessing: React.FC = () => {
         }
 
         .t-stat-card {
-          background: rgba(255,255,255,0.05);
-          padding: 8px;
-          border-radius: 4px;
+          background: rgba(255, 255, 255, 0.03);
+          padding: 10px 8px;
+          border-radius: 6px;
           text-align: center;
           display: flex;
           flex-direction: column;
           gap: 2px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .t-stat-num {
-          font-size: 16px;
+          font-size: 18px;
           font-weight: 700;
         }
 
         .t-stat-label {
           font-size: 9px;
-          color: #94A3B8;
+          color: #64748B;
+          text-transform: uppercase;
+          font-weight: 500;
         }
 
         .detected-individuals-box {
           display: flex;
           flex-direction: column;
           gap: 6px;
-          background: rgba(0,0,0,0.3);
-          padding: 8px 10px;
-          border-radius: 4px;
+          background: rgba(0,0,0,0.25);
+          padding: 10px 12px;
+          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.03);
         }
 
         .individuals-label {
           font-size: 10px;
-          font-weight: 600;
+          font-weight: 700;
           color: #94A3B8;
+          text-transform: uppercase;
         }
 
         .individuals-tag-list {
           display: flex;
           flex-wrap: wrap;
-          gap: 4px;
+          gap: 6px;
         }
 
         .tiger-id-pill {
-          background: rgba(34, 197, 94, 0.2);
-          border: 1px solid rgba(34, 197, 94, 0.4);
-          color: #86EFAC;
+          background: rgba(16, 185, 129, 0.15);
+          border: 1px solid rgba(16, 185, 129, 0.25);
+          color: #34D399;
           font-size: 10.5px;
-          padding: 2px 6px;
-          border-radius: 3px;
+          padding: 3px 8px;
+          border-radius: 4px;
           font-weight: 600;
+          box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15);
         }
 
         .stream-complete-alert {
           display: flex;
           align-items: center;
           gap: 6px;
-          background: rgba(34, 197, 94, 0.15);
-          border: 1px solid rgba(34, 197, 94, 0.3);
+          background: rgba(16, 185, 129, 0.1);
+          border: 1px solid rgba(16, 185, 129, 0.2);
           color: #DCFCE7;
           padding: 6px 10px;
           border-radius: 4px;
           font-size: 11px;
+        }
+
+        .stream-complete-alert code {
+          background: rgba(0,0,0,0.2);
+          padding: 1px 4px;
+          border-radius: 3px;
+          color: #34D399;
         }
 
         /* Metrics grid */
@@ -915,24 +938,29 @@ export const CameraProcessing: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 4px;
+          padding: 14px;
         }
 
         .m-label {
           font-size: 11px;
           color: var(--text-muted);
-          font-weight: 500;
+          font-weight: 600;
+          text-transform: uppercase;
         }
 
         .m-val {
           font-size: 22px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
           line-height: 1.1;
         }
 
         .m-sub {
           font-size: 10.5px;
           color: var(--text-muted);
+          border-top: 1px solid rgba(255, 255, 255, 0.03);
+          padding-top: 4px;
+          margin-top: 2px;
         }
 
         .grid-2 {
@@ -948,38 +976,45 @@ export const CameraProcessing: React.FC = () => {
         }
 
         .dropzone-box {
-          border: 2px dashed var(--border-default);
+          border: 2px dashed rgba(255, 255, 255, 0.15);
           border-radius: var(--radius-sm);
-          padding: 24px;
+          padding: 30px 24px;
           text-align: center;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.02);
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.25s ease;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
         }
 
         .dropzone-box:hover, .dropzone-box.drag-over {
-          border-color: var(--color-forest);
-          background: #F0FDF4;
+          border-color: var(--color-primary);
+          background: rgba(16, 185, 129, 0.04);
+          box-shadow: 0 0 15px rgba(16, 185, 129, 0.08);
         }
 
         .dropzone-icon {
-          color: var(--color-forest);
+          color: var(--color-primary-light);
+          transition: transform 0.2s;
+        }
+
+        .dropzone-box:hover .dropzone-icon {
+          transform: translateY(-2px);
         }
 
         .dropzone-main-text {
           font-weight: 600;
           font-size: 13.5px;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .dropzone-sub-text {
           font-size: 11.5px;
           color: var(--text-muted);
           max-width: 420px;
+          line-height: 1.45;
         }
 
         .dropzone-actions {
@@ -992,7 +1027,7 @@ export const CameraProcessing: React.FC = () => {
           gap: 12px;
           margin-top: 14px;
           padding-top: 14px;
-          border-top: 1px solid var(--border-default);
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .option-field {
@@ -1005,6 +1040,7 @@ export const CameraProcessing: React.FC = () => {
           font-size: 11px;
           font-weight: 600;
           color: var(--text-muted);
+          text-transform: uppercase;
         }
 
         .policy-items-list {
@@ -1018,26 +1054,28 @@ export const CameraProcessing: React.FC = () => {
           display: flex;
           gap: 10px;
           padding: 10px 12px;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
           border-radius: var(--radius-sm);
           font-size: 11.5px;
         }
 
         .policy-item strong {
           display: block;
-          color: var(--text-primary);
+          color: #FFFFFF;
           margin-bottom: 2px;
         }
 
         .policy-item p {
-          color: var(--text-muted);
-          line-height: 1.4;
+          color: var(--text-secondary);
+          line-height: 1.45;
           margin: 0;
         }
 
         .policy-icon {
           flex-shrink: 0;
           margin-top: 2px;
+          color: var(--color-primary-light);
         }
 
         .batches-card {
@@ -1046,28 +1084,9 @@ export const CameraProcessing: React.FC = () => {
 
         .batches-table-wrapper {
           overflow-x: auto;
-        }
-
-        .tt-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 11.5px;
-        }
-
-        .tt-table th {
-          text-align: left;
-          padding: 8px 10px;
-          border-bottom: 1.5px solid var(--border-default);
-          color: var(--text-muted);
-          font-weight: 600;
-          font-size: 10px;
-          letter-spacing: 0.03em;
-        }
-
-        .tt-table td {
-          padding: 10px;
-          border-bottom: 1px solid var(--border-subtle);
-          color: var(--text-primary);
+          background: rgba(0, 0, 0, 0.15);
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.03);
         }
 
         .num-col {
@@ -1076,6 +1095,7 @@ export const CameraProcessing: React.FC = () => {
 
         .batch-id-cell {
           font-weight: 600;
+          color: #FFFFFF;
         }
 
         .uploaded-by-cell {
@@ -1083,11 +1103,13 @@ export const CameraProcessing: React.FC = () => {
         }
 
         .tiger-count-badge {
-          background: #FEF3C7;
-          color: #92400E;
-          padding: 2px 6px;
-          border-radius: 3px;
+          background: rgba(245, 158, 11, 0.12);
+          border: 1px solid rgba(245, 158, 11, 0.25);
+          color: #FBBF24;
+          padding: 2px 7px;
+          border-radius: 4px;
           font-size: 11px;
+          font-weight: 600;
         }
 
         .progress-cell {
@@ -1097,14 +1119,33 @@ export const CameraProcessing: React.FC = () => {
         .mini-progress-bar {
           width: 100%;
           height: 6px;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.08);
           border-radius: 3px;
           overflow: hidden;
         }
 
         .mini-progress-fill {
           height: 100%;
-          background: var(--color-forest);
+          background: linear-gradient(90deg, #10B981, #34D399);
+          box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
+        }
+
+        .filter-pill-group .filter-pill {
+          background: transparent;
+          border: none;
+          font-size: 11px;
+          padding: 4px 10px;
+          border-radius: var(--radius-sm);
+          color: var(--text-secondary);
+          cursor: pointer;
+          font-weight: 500;
+        }
+
+        .filter-pill-group .filter-pill.active {
+          background: rgba(255,255,255,0.06);
+          color: #FFFFFF;
+          font-weight: 600;
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
         }
 
         .spin-icon {

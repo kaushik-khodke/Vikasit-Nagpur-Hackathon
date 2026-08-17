@@ -753,9 +753,10 @@ export const Dashboard: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 14px;
+          animation: fadeInUp 0.4s ease-out;
         }
 
-        /* Realtime Floating Toast */
+        /* Realtime Floating Toast — Glassmorphic Dark */
         .live-capture-toast {
           position: fixed;
           bottom: 24px;
@@ -764,28 +765,30 @@ export const Dashboard: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 12px 16px;
-          background: #0F172A;
-          border-radius: 8px;
-          box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.4);
-          animation: slideInToast 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          padding: 12px 18px;
+          background: rgba(15, 23, 42, 0.85);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-radius: 12px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+          animation: slideInToast 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           max-width: 440px;
-          color: #FFFFFF;
+          color: #E2E8F0;
         }
 
         .live-capture-toast.toast-success {
-          border: 1.5px solid #22C55E;
-          border-left: 4px solid #22C55E;
+          border-left: 4px solid #10B981;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 15px rgba(16, 185, 129, 0.15);
         }
 
         .live-capture-toast.toast-ambiguous {
-          border: 1.5px solid #F59E0B;
           border-left: 4px solid #F59E0B;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 15px rgba(245, 158, 11, 0.15);
         }
 
         @keyframes slideInToast {
           from {
-            transform: translateY(20px) scale(0.96);
+            transform: translateY(30px) scale(0.95);
             opacity: 0;
           }
           to {
@@ -798,7 +801,7 @@ export const Dashboard: React.FC = () => {
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 3px;
         }
 
         .toast-header-row {
@@ -812,7 +815,7 @@ export const Dashboard: React.FC = () => {
           font-size: 10px;
           font-weight: 700;
           letter-spacing: 0.5px;
-          color: #4ADE80;
+          color: #34D399;
         }
 
         .toast-ambiguous .toast-badge {
@@ -821,12 +824,21 @@ export const Dashboard: React.FC = () => {
 
         .toast-time {
           font-size: 10px;
-          color: #94A3B8;
+          color: #64748B;
         }
 
         .toast-title {
-          font-size: 12px;
+          font-size: 12.5px;
           color: #F8FAFC;
+          line-height: 1.4;
+        }
+
+        .toast-title strong {
+          color: #FFFFFF;
+        }
+
+        .toast-title span {
+          color: #34D399;
         }
 
         .toast-meta {
@@ -835,24 +847,25 @@ export const Dashboard: React.FC = () => {
         }
 
         .toast-action-btn {
-          display: flex;
+          display: inline-flex;
           align-items: center;
           gap: 4px;
-          padding: 5px 9px;
-          background: #1E293B;
-          border: 1px solid #334155;
-          border-radius: 4px;
+          padding: 6px 10px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 6px;
           font-size: 11px;
           font-weight: 600;
-          color: #38BDF8;
+          color: #34D399;
           text-decoration: none;
           white-space: nowrap;
-          transition: all 0.15s;
+          transition: all 0.2s;
         }
 
         .toast-action-btn:hover {
-          background: #334155;
+          background: var(--color-primary);
           color: #FFFFFF;
+          box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
         }
 
         /* Realtime Command Bar */
@@ -860,12 +873,13 @@ export const Dashboard: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 10px 16px;
-          background: var(--bg-surface);
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-sm);
+          padding: 12px 18px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--glass-border);
+          border-radius: var(--radius-md);
           flex-wrap: wrap;
           gap: 12px;
+          box-shadow: var(--shadow-sm);
         }
 
         .command-left {
@@ -879,9 +893,9 @@ export const Dashboard: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
-          padding: 4px 10px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 4px 12px;
           border-radius: 20px;
         }
 
@@ -892,34 +906,34 @@ export const Dashboard: React.FC = () => {
         }
 
         .live-pulsing-dot.active {
-          background: #22C55E;
-          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+          background: #10B981;
+          box-shadow: 0 0 8px #10B981;
           animation: pulseGreen 1.8s infinite;
         }
 
         .live-pulsing-dot.paused {
-          background: #94A3B8;
+          background: #64748B;
         }
 
         @keyframes pulseGreen {
           0% {
             transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
           }
           70% {
             transform: scale(1);
-            box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+            box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
           }
           100% {
             transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
           }
         }
 
         .live-status-txt {
-          font-size: 11px;
+          font-size: 10.5px;
           font-weight: 700;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.05em;
           color: var(--text-primary);
         }
 
@@ -935,7 +949,7 @@ export const Dashboard: React.FC = () => {
         }
 
         .telemetry-val {
-          color: var(--text-primary);
+          color: var(--text-secondary);
           font-weight: 600;
         }
 
@@ -949,10 +963,10 @@ export const Dashboard: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 6px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: var(--radius-sm);
-          padding: 2px 8px;
+          padding: 4px 8px;
         }
 
         .stream-speed-select {
@@ -966,13 +980,14 @@ export const Dashboard: React.FC = () => {
         }
 
         .trigger-btn {
-          background: linear-gradient(135deg, #1B5E3C 0%, #15803D 100%);
-          border-color: #166534;
-          box-shadow: 0 2px 6px rgba(27, 94, 60, 0.25);
+          background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+          border-color: rgba(16, 185, 129, 0.3);
+          box-shadow: 0 2px 10px rgba(16, 185, 129, 0.2);
         }
 
         .trigger-btn:hover {
-          background: linear-gradient(135deg, #15803D 0%, #16A34A 100%);
+          background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+          box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
         }
 
         .zap-icon {
@@ -981,7 +996,7 @@ export const Dashboard: React.FC = () => {
 
         @keyframes zapPulse {
           0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.15); opacity: 0.8; }
+          50% { transform: scale(1.15); opacity: 0.85; }
         }
 
         /* KPI Grid */
@@ -1007,7 +1022,16 @@ export const Dashboard: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 6px;
-          padding: 14px;
+          padding: 16px;
+          position: relative;
+          overflow: hidden;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .kpi-card:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+          border-color: rgba(255, 255, 255, 0.15);
         }
 
         .kpi-top {
@@ -1017,49 +1041,58 @@ export const Dashboard: React.FC = () => {
         }
 
         .kpi-label {
-          font-size: 11.5px;
-          font-weight: 500;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.02em;
           color: var(--text-muted);
+          text-transform: uppercase;
         }
 
         .kpi-icon-badge {
-          width: 28px;
-          height: 28px;
-          border-radius: var(--radius-sm);
-          background: var(--color-primary-bg);
-          color: var(--color-primary);
+          width: 30px;
+          height: 30px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: var(--color-primary-light);
           display: flex;
           align-items: center;
           justify-content: center;
+          transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover .kpi-icon-badge {
+          background: var(--color-primary-bg);
+          border-color: var(--border-active);
+          transform: scale(1.05);
         }
 
         .kpi-icon-badge.live-badge-icon {
-          background: rgba(34, 197, 94, 0.15);
-          color: #15803D;
+          color: #34D399;
         }
 
         .kpi-icon-badge.warning-badge-icon {
-          background: rgba(217, 119, 6, 0.15);
-          color: #B45309;
+          color: #FBBF24;
         }
 
         .kpi-value-row {
           display: flex;
           align-items: baseline;
           justify-content: space-between;
-          margin-top: 2px;
+          margin-top: 4px;
         }
 
         .kpi-value {
-          font-size: 24px;
+          font-size: 26px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
           line-height: 1.1;
+          letter-spacing: -0.02em;
           transition: all 0.3s ease;
         }
 
         .kpi-denom {
-          font-size: 13px;
+          font-size: 14px;
           color: var(--text-muted);
           font-weight: 400;
         }
@@ -1067,24 +1100,31 @@ export const Dashboard: React.FC = () => {
         .kpi-subtext {
           font-size: 11px;
           color: var(--text-muted);
-          margin-top: 2px;
+          margin-top: 4px;
+          border-top: 1px solid rgba(255, 255, 255, 0.03);
+          padding-top: 6px;
+        }
+
+        .kpi-subtext span {
+          color: var(--text-secondary);
         }
 
         .mini-pulse-dot {
           display: inline-block;
           width: 6px;
           height: 6px;
-          background: #22C55E;
+          background: #10B981;
           border-radius: 50%;
-          margin-right: 3px;
+          margin-right: 4px;
+          box-shadow: 0 0 6px #10B981;
         }
 
         /* Realtime Visualizer Section */
         .live-telemetry-visualizer {
-          padding: 16px;
+          padding: 18px;
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 16px;
         }
 
         .visualizer-header {
@@ -1102,9 +1142,9 @@ export const Dashboard: React.FC = () => {
         }
 
         .vis-title {
-          font-size: 13.5px;
+          font-size: 14px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
           display: flex;
           align-items: center;
           gap: 7px;
@@ -1132,16 +1172,16 @@ export const Dashboard: React.FC = () => {
         .legend-box {
           width: 10px;
           height: 10px;
-          border-radius: 2px;
+          border-radius: 3px;
         }
 
         .current-hour-box {
-          background: #22C55E;
+          background: linear-gradient(180deg, #10B981 0%, #059669 100%);
+          box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
         }
 
         .hist-hour-box {
-          background: #94A3B8;
-          opacity: 0.5;
+          background: rgba(255, 255, 255, 0.15);
         }
 
         .vis-body-grid {
@@ -1161,7 +1201,11 @@ export const Dashboard: React.FC = () => {
           display: flex;
           flex-direction: column;
           justify-content: flex-end;
-          min-height: 130px;
+          min-height: 140px;
+          background: rgba(0, 0, 0, 0.15);
+          padding: 10px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.03);
         }
 
         .sparkbar-chart {
@@ -1169,9 +1213,9 @@ export const Dashboard: React.FC = () => {
           align-items: flex-end;
           justify-content: space-between;
           gap: 6px;
-          height: 110px;
+          height: 120px;
           padding-top: 15px;
-          border-bottom: 1px solid var(--border-default);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .sparkbar-col {
@@ -1187,16 +1231,24 @@ export const Dashboard: React.FC = () => {
         .sparkbar-val-bubble {
           font-size: 9.5px;
           font-weight: 700;
-          color: var(--text-muted);
+          color: var(--text-secondary);
           margin-bottom: 2px;
+          opacity: 0;
+          transform: translateY(2px);
+          transition: all 0.2s ease;
+        }
+
+        .sparkbar-col:hover .sparkbar-val-bubble {
+          opacity: 1;
+          transform: translateY(0);
         }
 
         .sparkbar-track {
           width: 100%;
           max-width: 22px;
-          height: 70px;
-          background: var(--bg-surface-subtle);
-          border-radius: 3px 3px 0 0;
+          height: 80px;
+          background: rgba(255, 255, 255, 0.04);
+          border-radius: 4px 4px 0 0;
           display: flex;
           align-items: flex-end;
           overflow: hidden;
@@ -1204,16 +1256,15 @@ export const Dashboard: React.FC = () => {
 
         .sparkbar-fill {
           width: 100%;
-          background: #94A3B8;
-          opacity: 0.6;
-          border-radius: 3px 3px 0 0;
-          transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 4px 4px 0 0;
+          transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .sparkbar-fill-latest {
-          background: linear-gradient(180deg, #22C55E 0%, #15803D 100%);
+          background: linear-gradient(180deg, #34D399 0%, #10B981 100%);
           opacity: 1;
-          box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+          box-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
           animation: barPulse 2s infinite;
         }
 
@@ -1225,7 +1276,7 @@ export const Dashboard: React.FC = () => {
         .sparkbar-label {
           font-size: 9px;
           color: var(--text-muted);
-          margin-top: 4px;
+          margin-top: 5px;
         }
 
         /* Sector Gauges */
@@ -1234,26 +1285,33 @@ export const Dashboard: React.FC = () => {
           flex-direction: column;
           gap: 8px;
           justify-content: center;
+          background: rgba(0, 0, 0, 0.15);
+          padding: 12px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.03);
         }
 
         .sector-gauges-title {
-          font-size: 11px;
-          font-weight: 600;
+          font-size: 10px;
+          font-weight: 700;
           color: var(--text-muted);
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.05em;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+          padding-bottom: 6px;
+          margin-bottom: 6px;
         }
 
         .sector-bars-list {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 8px;
         }
 
         .sector-row {
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 3px;
         }
 
         .sector-info-row {
@@ -1263,8 +1321,8 @@ export const Dashboard: React.FC = () => {
         }
 
         .sector-name {
-          font-weight: 500;
-          color: var(--text-primary);
+          font-weight: 600;
+          color: var(--text-secondary);
         }
 
         .sector-num {
@@ -1275,7 +1333,7 @@ export const Dashboard: React.FC = () => {
         .sector-progress-track {
           width: 100%;
           height: 6px;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.05);
           border-radius: 3px;
           overflow: hidden;
         }
@@ -1283,7 +1341,7 @@ export const Dashboard: React.FC = () => {
         .sector-progress-fill {
           height: 100%;
           border-radius: 3px;
-          transition: width 0.6s ease;
+          transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* Split Layout */
@@ -1300,7 +1358,7 @@ export const Dashboard: React.FC = () => {
         }
 
         .btn-sm {
-          padding: 5px 10px;
+          padding: 5px 12px;
           font-size: 11.5px;
         }
 
@@ -1309,26 +1367,30 @@ export const Dashboard: React.FC = () => {
           align-items: center;
           gap: 4px;
           margin-left: 8px;
-          font-size: 9.5px;
+          font-size: 9px;
           font-weight: 700;
           font-family: var(--font-mono);
-          background: rgba(34, 197, 94, 0.12);
-          color: #16A34A;
-          border: 1px solid rgba(34, 197, 94, 0.3);
-          padding: 2px 6px;
+          background: rgba(16, 185, 129, 0.15);
+          color: #34D399;
+          border: 1px solid rgba(16, 185, 129, 0.25);
+          padding: 2px 8px;
           border-radius: 10px;
         }
 
         .pulsing-mini-dot {
           width: 5px;
           height: 5px;
-          background: #22C55E;
+          background: #10B981;
           border-radius: 50%;
+          box-shadow: 0 0 6px #10B981;
           animation: pulseGreen 1.5s infinite;
         }
 
         .sightings-table-container {
           overflow-x: auto;
+          background: rgba(0, 0, 0, 0.15);
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.03);
         }
 
         /* Row Flash on Ingest */
@@ -1337,16 +1399,16 @@ export const Dashboard: React.FC = () => {
         }
 
         .sighting-row.row-just-arrived {
-          background-color: rgba(34, 197, 94, 0.18) !important;
+          background-color: rgba(16, 185, 129, 0.2) !important;
           animation: flashHighlight 3s ease forwards;
         }
 
         @keyframes flashHighlight {
           0% {
-            background-color: rgba(34, 197, 94, 0.28);
+            background-color: rgba(16, 185, 129, 0.25);
           }
           70% {
-            background-color: rgba(34, 197, 94, 0.12);
+            background-color: rgba(16, 185, 129, 0.1);
           }
           100% {
             background-color: transparent;
@@ -1360,12 +1422,13 @@ export const Dashboard: React.FC = () => {
         }
 
         .new-tag-pill {
-          font-size: 9px;
+          font-size: 8px;
           font-weight: 800;
-          background: #22C55E;
+          background: linear-gradient(135deg, #10B981, #069669);
           color: #FFFFFF;
-          padding: 1px 4px;
-          border-radius: 3px;
+          padding: 2px 5px;
+          border-radius: 4px;
+          box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
           animation: bounceNew 1s infinite alternate;
         }
 
@@ -1377,20 +1440,20 @@ export const Dashboard: React.FC = () => {
         .confidence-cell {
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 4px;
         }
 
         .conf-mini-bar-track {
           width: 50px;
           height: 4px;
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.08);
           border-radius: 2px;
           overflow: hidden;
         }
 
         .conf-mini-bar-fill {
           height: 100%;
-          background: #22C55E;
+          background: linear-gradient(90deg, #10B981, #34D399);
           border-radius: 2px;
         }
 
@@ -1403,11 +1466,12 @@ export const Dashboard: React.FC = () => {
         .tiger-thumb-box {
           width: 32px;
           height: 32px;
-          border-radius: var(--radius-sm);
+          border-radius: 6px;
           overflow: hidden;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           flex-shrink: 0;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
         }
 
         .tiger-thumb {
@@ -1419,7 +1483,7 @@ export const Dashboard: React.FC = () => {
         .tiger-code-txt {
           font-size: 12px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .tiger-sub-txt {
@@ -1428,7 +1492,7 @@ export const Dashboard: React.FC = () => {
         }
 
         .station-txt {
-          font-weight: 500;
+          font-weight: 600;
           color: var(--text-primary);
         }
 
@@ -1455,12 +1519,14 @@ export const Dashboard: React.FC = () => {
 
         .view-all-link {
           font-size: 11.5px;
-          color: var(--color-primary);
-          font-weight: 500;
+          color: var(--color-primary-light);
+          font-weight: 600;
+          transition: all 0.2s;
         }
 
         .view-all-link:hover {
-          text-decoration: underline;
+          color: #FFFFFF;
+          text-decoration: none;
         }
 
         .alert-items-list {
@@ -1470,25 +1536,31 @@ export const Dashboard: React.FC = () => {
         }
 
         .alert-entry {
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: var(--radius-sm);
-          padding: 10px;
+          padding: 10px 12px;
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 4px;
+          transition: all 0.2s ease;
+        }
+
+        .alert-entry:hover {
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(255, 255, 255, 0.1);
         }
 
         .alert-entry.high, .alert-entry.critical {
-          border-left: 3px solid #DC2626;
+          border-left: 3px solid #F87171;
         }
 
         .alert-entry.medium {
-          border-left: 3px solid #D97706;
+          border-left: 3px solid #F59E0B;
         }
 
         .alert-entry.low {
-          border-left: 3px solid #0284C7;
+          border-left: 3px solid #38BDF8;
         }
 
         .alert-entry-header {
@@ -1505,13 +1577,13 @@ export const Dashboard: React.FC = () => {
         .alert-entry-title {
           font-size: 11.5px;
           font-weight: 600;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .alert-entry-desc {
           font-size: 10.5px;
           color: var(--text-secondary);
-          line-height: 1.4;
+          line-height: 1.45;
         }
 
         .quick-actions-grid {
@@ -1527,13 +1599,13 @@ export const Dashboard: React.FC = () => {
           align-items: center;
           justify-content: center;
           gap: 6px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: var(--radius-sm);
-          padding: 12px 8px;
+          padding: 14px 10px;
           text-align: center;
           font-size: 11.5px;
-          font-weight: 500;
+          font-weight: 600;
           color: var(--text-secondary);
           transition: all var(--transition-fast);
         }
@@ -1541,13 +1613,15 @@ export const Dashboard: React.FC = () => {
         .quick-action-btn:hover {
           background: var(--color-primary-bg);
           border-color: var(--border-active);
-          color: var(--color-primary);
+          color: #FFFFFF;
+          transform: translateY(-1px);
+          box-shadow: var(--shadow-glow-emerald);
         }
 
-        .text-forest { color: var(--color-primary); }
-        .text-warning { color: #B45309; }
-        .text-amber { color: #D97706; }
-        .text-success { color: #16A34A; }
+        .text-forest { color: var(--color-primary-light); }
+        .text-warning { color: #F59E0B; }
+        .text-amber { color: #FBBF24; }
+        .text-success { color: #34D399; }
 
         @media (max-width: 768px) {
           .hide-mobile {

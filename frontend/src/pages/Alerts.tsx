@@ -224,6 +224,7 @@ export const Alerts: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 14px;
+          animation: fadeInUp 0.4s ease-out;
         }
 
         .banner-left {
@@ -236,7 +237,9 @@ export const Alerts: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 16px 20px;
+          padding: 18px 22px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--glass-border);
         }
 
         @media (max-width: 768px) {
@@ -252,64 +255,72 @@ export const Alerts: React.FC = () => {
           align-items: center;
           gap: 6px;
           font-family: var(--font-mono);
-          font-size: 10.5px;
+          font-size: 10px;
           font-weight: 700;
           color: var(--status-critical-text);
-          margin-bottom: 2px;
+          margin-bottom: 4px;
+          letter-spacing: 0.05em;
         }
 
         .hero-title {
           font-size: 17px;
           font-weight: 700;
-          margin-bottom: 2px;
+          color: #FFFFFF;
+          margin-bottom: 4px;
         }
 
         .hero-desc {
           font-size: 12px;
           color: var(--text-secondary);
           max-width: 700px;
-          line-height: 1.4;
+          line-height: 1.5;
         }
 
         .stat-pill {
           display: flex;
           align-items: center;
           gap: 10px;
-          padding: 8px 14px;
+          padding: 10px 16px;
           border-radius: var(--radius-sm);
         }
 
         .stat-pill.red {
-          background: #FEE2E2;
-          border: 1px solid #FECACA;
-          color: #991B1B;
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.25);
+          color: #F87171;
+          box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
         }
 
         .stat-pill.green {
-          background: #DCFCE7;
-          border: 1px solid #BBF7D0;
-          color: #166534;
+          background: rgba(16, 185, 129, 0.1);
+          border: 1px solid rgba(16, 185, 129, 0.25);
+          color: #34D399;
+          box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
         }
 
         .stat-pill .num {
-          font-size: 18px;
+          font-size: 20px;
           font-weight: 700;
           line-height: 1;
         }
 
         .stat-pill .lbl {
           font-size: 10.5px;
-          color: var(--text-secondary);
+          color: var(--text-muted);
           margin-top: 1px;
+          font-weight: 500;
+          text-transform: uppercase;
         }
 
         .alert-filters-card {
-          padding: 12px 16px;
+          padding: 12px 18px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 14px;
           flex-wrap: wrap;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--glass-border);
         }
 
         .search-box {
@@ -318,10 +329,16 @@ export const Alerts: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: var(--radius-sm);
-          padding: 6px 10px;
+          padding: 6px 12px;
+          transition: all var(--transition-fast);
+        }
+
+        .search-box:focus-within {
+          border-color: var(--border-focus);
+          box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
         }
 
         .search-input {
@@ -336,23 +353,49 @@ export const Alerts: React.FC = () => {
         .severity-tabs {
           display: flex;
           gap: 4px;
+          background: rgba(255, 255, 255, 0.03);
+          padding: 2px;
+          border-radius: var(--radius-sm);
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .sev-tab {
-          padding: 4px 10px;
+          padding: 5px 12px;
           border-radius: var(--radius-sm);
           font-size: 11.5px;
           color: var(--text-secondary);
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-default);
+          background: transparent;
+          border: none;
           transition: all var(--transition-fast);
         }
 
+        .sev-tab:hover {
+          color: #FFFFFF;
+        }
+
         .sev-tab.active {
-          background: #FFFFFF;
-          color: var(--color-primary);
+          background: rgba(255, 255, 255, 0.06);
+          color: #FFFFFF;
           font-weight: 600;
-          border-color: var(--border-active);
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .sev-tab.active.high {
+          background: rgba(239, 68, 68, 0.1);
+          color: #F87171;
+          box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.2);
+        }
+
+        .sev-tab.active.medium {
+          background: rgba(245, 158, 11, 0.1);
+          color: #FBBF24;
+          box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.2);
+        }
+
+        .sev-tab.active.low {
+          background: rgba(56, 189, 248, 0.1);
+          color: #38BDF8;
+          box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.2);
         }
 
         .alerts-list {
@@ -362,28 +405,41 @@ export const Alerts: React.FC = () => {
         }
 
         .alert-card {
-          padding: 14px 16px;
+          padding: 16px 18px;
           display: flex;
           flex-direction: column;
           gap: 10px;
+          background: var(--glass-bg);
+          border: 1px solid var(--glass-border);
           transition: all var(--transition-fast);
         }
 
-        .alert-card.high {
-          border-left: 3.5px solid #DC2626;
+        .alert-card:hover {
+          transform: translateY(-1px);
+          border-color: rgba(255, 255, 255, 0.12);
+          box-shadow: var(--shadow-md);
+        }
+
+        .alert-card.high, .alert-card.critical {
+          border-left: 3.5px solid #F87171;
+          box-shadow: 0 4px 14px rgba(239, 68, 68, 0.05);
         }
 
         .alert-card.medium {
-          border-left: 3.5px solid #D97706;
+          border-left: 3.5px solid #F59E0B;
+          box-shadow: 0 4px 14px rgba(245, 158, 11, 0.05);
         }
 
         .alert-card.low {
-          border-left: 3.5px solid #0284C7;
+          border-left: 3.5px solid #38BDF8;
+          box-shadow: 0 4px 14px rgba(56, 189, 248, 0.05);
         }
 
         .alert-card.acknowledged {
-          opacity: 0.8;
-          background: #FAFBF9;
+          opacity: 0.65;
+          background: rgba(255, 255, 255, 0.01);
+          border-left-color: rgba(255, 255, 255, 0.2);
+          box-shadow: none;
         }
 
         .alert-card-top {
@@ -415,30 +471,32 @@ export const Alerts: React.FC = () => {
         .alert-main-title {
           font-size: 14px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: #FFFFFF;
           margin-bottom: 2px;
         }
 
         .alert-description {
           font-size: 12px;
           color: var(--text-secondary);
-          line-height: 1.45;
+          line-height: 1.5;
         }
 
         .action-required-callout {
-          background: #FEF3C7;
-          border: 1px solid #FDE68A;
+          background: rgba(245, 158, 11, 0.1);
+          border: 1px solid rgba(245, 158, 11, 0.2);
           border-radius: var(--radius-sm);
-          padding: 6px 10px;
+          padding: 8px 12px;
           font-size: 11.5px;
-          color: #92400E;
+          color: #FBBF24;
           margin-top: 4px;
           display: flex;
           gap: 6px;
+          line-height: 1.4;
         }
 
         .callout-label {
-          color: #78350F;
+          color: #FBBF24;
+          font-weight: 700;
           flex-shrink: 0;
         }
 
@@ -448,8 +506,8 @@ export const Alerts: React.FC = () => {
           justify-content: space-between;
           flex-wrap: wrap;
           gap: 10px;
-          padding-top: 8px;
-          border-top: 1px solid var(--border-subtle);
+          padding-top: 10px;
+          border-top: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .meta-left {
@@ -482,11 +540,11 @@ export const Alerts: React.FC = () => {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          padding: 28px;
-          gap: 6px;
+          padding: 40px;
+          gap: 10px;
         }
 
-        .text-forest { color: var(--color-primary); }
+        .text-forest { color: var(--color-primary-light); }
         .text-danger { color: var(--status-critical-text); }
         .font-mono { font-family: var(--font-mono); }
         .font-bold { font-weight: 600; }

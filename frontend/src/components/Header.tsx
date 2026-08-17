@@ -5,6 +5,7 @@ import {
   Bell
 } from 'lucide-react';
 import { mockAlerts } from '../data/mockData';
+import ThemeToggle from './ThemeToggle';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -83,6 +84,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       </div>
 
       <div className="header-right">
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
         {/* Quick Alert Bell */}
         <button
           className="header-icon-btn"
@@ -108,8 +112,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       <style>{`
         .tt-header {
           height: var(--header-height);
-          background-color: var(--bg-header);
-          border-bottom: 1px solid var(--border-default);
+          background: rgba(4, 8, 15, 0.82);
+          backdrop-filter: blur(24px) saturate(180%);
+          -webkit-backdrop-filter: blur(24px) saturate(180%);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.055);
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -117,6 +123,18 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           position: sticky;
           top: 0;
           z-index: 50;
+          box-shadow: 0 1px 0 rgba(16, 185, 129, 0.08), 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        .tt-header::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent 0%, rgba(16, 185, 129, 0.35) 30%, rgba(45, 212, 191, 0.25) 60%, transparent 100%);
+          pointer-events: none;
         }
 
         .header-left {
@@ -128,16 +146,18 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         .menu-toggle-btn {
           display: none;
           color: var(--text-secondary);
-          padding: 6px;
+          padding: 7px;
           border-radius: var(--radius-sm);
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.05);
           border: 1px solid var(--border-default);
           transition: all var(--transition-fast);
         }
 
         .menu-toggle-btn:hover {
           color: var(--text-primary);
+          background: rgba(255, 255, 255, 0.1);
           border-color: var(--border-active);
+          box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
         }
 
         .page-heading-group {
@@ -149,24 +169,29 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           font-family: var(--font-mono);
           font-size: 10px;
           font-weight: 600;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--color-primary);
           line-height: 1.2;
+          background: linear-gradient(90deg, var(--color-primary-light), #2DD4BF, #22D3EE);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: gradientShift 5s ease infinite;
         }
 
         .page-title {
           font-size: 16px;
-          font-weight: 600;
+          font-weight: 700;
           color: var(--text-primary);
           line-height: 1.2;
-          margin: 0;
+          margin: 2px 0 0 0;
+          letter-spacing: -0.015em;
         }
 
         .header-right {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
         }
 
         .header-icon-btn {
@@ -174,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           color: var(--text-secondary);
           padding: 7px;
           border-radius: var(--radius-sm);
-          background: var(--bg-surface-subtle);
+          background: rgba(255, 255, 255, 0.045);
           border: 1px solid var(--border-default);
           display: flex;
           align-items: center;
@@ -185,42 +210,56 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         .header-icon-btn:hover {
           color: var(--text-primary);
           border-color: var(--border-active);
-          background: #E8F2EC;
+          background: rgba(16, 185, 129, 0.08);
+          box-shadow: 0 0 14px rgba(16, 185, 129, 0.18);
+          transform: translateY(-1px);
         }
 
         .alert-badge {
           position: absolute;
-          top: -3px;
-          right: -3px;
-          background-color: var(--status-critical-text);
+          top: -4px;
+          right: -4px;
+          background: linear-gradient(135deg, #DC2626, #EF4444);
           color: #fff;
           font-family: var(--font-mono);
           font-size: 9px;
           font-weight: 700;
-          min-width: 14px;
-          height: 14px;
+          min-width: 15px;
+          height: 15px;
           border-radius: var(--radius-full);
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 1.5px solid #FFFFFF;
+          border: 1.5px solid #04080F;
+          box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+          animation: glowPulse 2s ease-in-out infinite;
         }
 
         .user-profile-widget {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 3px 8px 3px 3px;
-          background: var(--bg-surface-subtle);
+          padding: 4px 10px 4px 4px;
+          background: rgba(255, 255, 255, 0.04);
           border: 1px solid var(--border-default);
           border-radius: var(--radius-sm);
+          backdrop-filter: blur(8px);
+          transition: all var(--transition-fast);
+          cursor: pointer;
+        }
+
+        .user-profile-widget:hover {
+          background: rgba(255, 255, 255, 0.075);
+          border-color: rgba(255, 255, 255, 0.14);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+          transform: translateY(-1px);
         }
 
         .user-avatar {
-          width: 28px;
-          height: 28px;
-          border-radius: var(--radius-sm);
-          background: var(--color-primary);
+          width: 30px;
+          height: 30px;
+          border-radius: 8px;
+          background: var(--gradient-primary);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -228,6 +267,25 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           font-weight: 700;
           color: #FFFFFF;
           font-family: var(--font-mono);
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .user-avatar::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 60%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          animation: avatarSheen 4s ease-in-out infinite;
+        }
+
+        @keyframes avatarSheen {
+          0% { left: -100%; }
+          30%, 100% { left: 150%; }
         }
 
         .user-info {
@@ -246,11 +304,40 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           font-size: 9.5px;
           color: var(--text-muted);
           line-height: 1.2;
+          margin-top: 1px;
+        }
+
+        /* System status indicator */
+        .system-status-dot {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 4px 10px;
+          background: rgba(16, 185, 129, 0.06);
+          border: 1px solid rgba(16, 185, 129, 0.15);
+          border-radius: var(--radius-full);
+          font-size: 10px;
+          font-weight: 600;
+          color: var(--color-primary-light);
+          font-family: var(--font-mono);
+          letter-spacing: 0.04em;
+        }
+
+        .sys-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #10B981;
+          box-shadow: 0 0 8px #10B981;
+          animation: glowPulse 2s ease-in-out infinite;
         }
 
         @media (max-width: 992px) {
           .menu-toggle-btn {
             display: flex;
+          }
+          .system-status-dot {
+            display: none;
           }
         }
 

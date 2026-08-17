@@ -675,15 +675,16 @@ export const LiveCameraFeeds: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          animation: fadeInUp 0.4s ease-out;
         }
 
         .live-feed-toast {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: #FEF3C7;
-          border: 1px solid #FDE68A;
-          color: #92400E;
+          background: rgba(251, 191, 36, 0.1);
+          border: 1px solid rgba(251, 191, 36, 0.2);
+          color: #FBBF24;
           padding: 10px 14px;
           border-radius: var(--radius-sm);
           font-size: 12.5px;
@@ -696,11 +697,11 @@ export const LiveCameraFeeds: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 12px 16px;
+          padding: 12px 18px;
           flex-wrap: wrap;
           gap: 12px;
-          background: var(--bg-surface);
-          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--glass-border);
         }
 
         .strip-left, .strip-right {
@@ -716,19 +717,19 @@ export const LiveCameraFeeds: React.FC = () => {
           gap: 8px;
           font-size: 13px;
           font-weight: 600;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .live-pulse-dot {
           width: 9px;
           height: 9px;
           border-radius: 50%;
-          background: #94A3B8;
+          background: #64748B;
         }
 
         .live-pulse-dot.active {
-          background: #22C55E;
-          box-shadow: 0 0 10px #22C55E;
+          background: #10B981;
+          box-shadow: 0 0 10px #10B981;
           animation: pulse 1.5s infinite;
         }
 
@@ -749,14 +750,14 @@ export const LiveCameraFeeds: React.FC = () => {
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          transition: all 0.2s ease;
-          border: 1px solid var(--border-default);
-          background: var(--bg-surface);
+          transition: all 0.25s ease;
+          border: 1px solid var(--glass-border);
+          background: var(--glass-bg);
         }
 
         .camera-channel-card.threat-active {
-          border: 2px solid #EF4444 !important;
-          box-shadow: 0 0 20px rgba(239, 68, 68, 0.35);
+          border: 2px solid #F87171 !important;
+          box-shadow: 0 0 20px rgba(248, 113, 113, 0.25);
         }
 
         .channel-header {
@@ -764,8 +765,8 @@ export const LiveCameraFeeds: React.FC = () => {
           align-items: flex-start;
           justify-content: space-between;
           padding: 12px 14px;
-          background: var(--bg-subtle);
-          border-bottom: 1px solid var(--border-subtle);
+          background: rgba(255, 255, 255, 0.02);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .channel-identity {
@@ -778,15 +779,18 @@ export const LiveCameraFeeds: React.FC = () => {
           font-family: var(--font-mono);
           font-size: 11px;
           font-weight: 700;
-          padding: 4px 7px;
+          padding: 4px 8px;
           border-radius: 4px;
-          background: #0284C7;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           color: #FFFFFF;
           letter-spacing: 0.05em;
         }
 
         .channel-badge.alert-badge {
-          background: #DC2626;
+          background: rgba(239, 68, 68, 0.15);
+          border-color: rgba(239, 68, 68, 0.3);
+          color: #F87171;
           animation: pulse 1s infinite;
         }
 
@@ -799,8 +803,7 @@ export const LiveCameraFeeds: React.FC = () => {
         .channel-title {
           font-size: 13px;
           font-weight: 700;
-          color: var(--text-primary);
-          margin: 0;
+          color: #FFFFFF;
         }
 
         .channel-village-info {
@@ -808,17 +811,22 @@ export const LiveCameraFeeds: React.FC = () => {
           align-items: center;
           gap: 4px;
           font-size: 11px;
-          color: var(--text-muted);
+          color: #333333;
+        }
+
+        .channel-village-info strong {
+          color: #000000;
+          font-weight: 600;
         }
 
         .streaming-pill {
           font-family: var(--font-mono);
           font-size: 10px;
           font-weight: 700;
-          color: #166534;
-          background: #DCFCE7;
-          border: 1px solid #BBF7D0;
-          padding: 2px 7px;
+          color: #34D399;
+          background: rgba(16, 185, 129, 0.12);
+          border: 1px solid rgba(16, 185, 129, 0.25);
+          padding: 2px 8px;
           border-radius: 12px;
         }
 
@@ -827,9 +835,9 @@ export const LiveCameraFeeds: React.FC = () => {
           font-size: 10px;
           font-weight: 600;
           color: #64748B;
-          background: #F1F5F9;
-          border: 1px solid #E2E8F0;
-          padding: 2px 7px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 2px 8px;
           border-radius: 12px;
         }
 
@@ -838,9 +846,10 @@ export const LiveCameraFeeds: React.FC = () => {
           font-size: 10px;
           font-weight: 700;
           color: #FFFFFF;
-          background: #DC2626;
+          background: #EF4444;
           padding: 2px 8px;
           border-radius: 12px;
+          box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
           animation: pulse 1s infinite;
         }
 
@@ -848,11 +857,12 @@ export const LiveCameraFeeds: React.FC = () => {
         .channel-screen-container {
           position: relative;
           aspect-ratio: 16 / 9;
-          background: #0B1320;
+          background: #04080E;
           display: flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .video-player-wrapper {
@@ -888,17 +898,17 @@ export const LiveCameraFeeds: React.FC = () => {
           cursor: pointer;
           width: 100%;
           height: 100%;
-          border: 2px dashed rgba(255, 255, 255, 0.15);
-          transition: background 0.2s ease;
+          border: 2px dashed rgba(255, 255, 255, 0.08);
+          transition: all 0.25s ease;
         }
 
         .channel-upload-dropzone:hover {
-          background: rgba(255, 255, 255, 0.03);
-          border-color: var(--color-forest);
+          background: rgba(255, 255, 255, 0.02);
+          border-color: rgba(16, 185, 129, 0.3);
         }
 
         .dropzone-icon {
-          color: #64748B;
+          color: #475569;
         }
 
         .upload-prompt-text {
@@ -909,7 +919,7 @@ export const LiveCameraFeeds: React.FC = () => {
 
         .upload-prompt-sub {
           font-size: 11px;
-          color: #94A3B8;
+          color: #64748B;
         }
 
         .dropzone-btn-row {
@@ -930,7 +940,9 @@ export const LiveCameraFeeds: React.FC = () => {
         }
 
         .threat-alert-box {
-          background: rgba(185, 28, 28, 0.95);
+          background: rgba(185, 28, 28, 0.9);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           color: #FFFFFF;
           padding: 8px 12px;
           border-radius: 6px;
@@ -938,7 +950,8 @@ export const LiveCameraFeeds: React.FC = () => {
           align-items: center;
           gap: 8px;
           font-size: 12px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+          border-left: 3px solid #F87171;
           animation: slideUp 0.3s ease-out;
         }
 
@@ -950,8 +963,8 @@ export const LiveCameraFeeds: React.FC = () => {
         /* Channel Footer */
         .channel-footer {
           padding: 10px 14px;
-          background: var(--bg-surface);
-          border-top: 1px solid var(--border-subtle);
+          background: rgba(255, 255, 255, 0.01);
+          border-top: 1px solid rgba(255, 255, 255, 0.04);
           display: flex;
           flex-direction: column;
           gap: 8px;
@@ -966,8 +979,9 @@ export const LiveCameraFeeds: React.FC = () => {
         }
 
         .alert-time-tag {
-          color: #EF4444;
+          color: #F87171;
           font-weight: 700;
+          box-shadow: 0 0 8px rgba(248, 113, 113, 0.15);
         }
 
         .channel-controls-row {
@@ -981,7 +995,18 @@ export const LiveCameraFeeds: React.FC = () => {
           background: #DC2626 !important;
           border-color: #B91C1C !important;
           color: #FFFFFF !important;
+          box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3) !important;
         }
+
+        .threat-action-btn:hover {
+          background: #EF4444 !important;
+          box-shadow: 0 4px 14px rgba(220, 38, 38, 0.45) !important;
+        }
+
+        .text-red { color: #F87171; }
+        .text-red-alert { color: #F87171; }
+        .text-forest { color: var(--color-primary-light); }
+        .text-amber { color: #FBBF24; }
 
         @keyframes slideUp {
           from {

@@ -1,0 +1,830 @@
+/* Light Mode Theme Variables */
+:root[data-theme="light"],
+:root.light-mode {
+  /* Light Background Colors - Tiger Tinted */
+  --bg-page: #FAF6F1;
+  --bg-surface: rgba(255, 140, 0, 0.04);
+  --bg-surface-subtle: rgba(255, 140, 0, 0.06);
+  --bg-sidebar: #FFFFFF;
+  --bg-sidebar-hover: rgba(255, 140, 0, 0.08);
+  --bg-sidebar-active: rgba(255, 140, 0, 0.12);
+  --bg-header: rgba(255, 255, 255, 0.95);
+  --bg-input: rgba(255, 140, 0, 0.05);
+
+  /* Light Text Colors */
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted: #8a8a8a;
+  --text-inverse: #FFFFFF;
+
+  /* Light Borders - Tiger Tinted */
+  --border-subtle: rgba(255, 140, 0, 0.08);
+  --border-default: rgba(255, 140, 0, 0.12);
+  --border-active: rgba(255, 140, 0, 0.4);
+  --border-glow: rgba(255, 140, 0, 0.25);
+
+  /* Light Status Colors */
+  --status-success-text: #E67E00;
+  --status-success-bg: rgba(255, 140, 0, 0.1);
+  --status-success-border: rgba(255, 140, 0, 0.2);
+
+  --status-warning-text: #FF8C00;
+  --status-warning-bg: rgba(255, 140, 0, 0.1);
+  --status-warning-border: rgba(255, 140, 0, 0.2);
+
+  --status-critical-text: #FF6B6B;
+  --status-critical-bg: rgba(255, 107, 107, 0.1);
+  --status-critical-border: rgba(255, 107, 107, 0.2);
+
+  --status-info-text: #FF8C00;
+  --status-info-bg: rgba(255, 140, 0, 0.1);
+  --status-info-border: rgba(255, 140, 0, 0.2);
+
+  /* Light Glass Effect */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 140, 0, 0.1);
+
+  /* Light Shadows - Tiger Tinted */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.12), 0 4px 6px rgba(0, 0, 0, 0.08);
+  --shadow-glow-emerald: 0 0 20px rgba(255, 140, 0, 0.15), 0 0 8px rgba(255, 165, 0, 0.08);
+  --shadow-glow-red: 0 0 20px rgba(255, 107, 107, 0.15);
+  --shadow-glow-amber: 0 0 20px rgba(255, 165, 0, 0.15);
+  --shadow-card-hover: 0 8px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 140, 0, 0.1);
+
+  /* Light Gradients - Tiger Theme */
+  --gradient-primary: linear-gradient(135deg, #E67E00 0%, #FF8C00 50%, #FFA500 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #FF8C00 0%, #FFA500 50%, #FFB84D 100%);
+  --gradient-surface: linear-gradient(135deg, rgba(255,140,0,0.08) 0%, rgba(255,165,0,0.04) 100%);
+  --gradient-danger: linear-gradient(135deg, #FF6B6B 0%, #FF8787 100%);
+
+  /* Light Mode Specific */
+  --color-primary-bg: rgba(255, 140, 0, 0.08);
+}
+
+/* Light mode specific overrides */
+:root.light-mode html,
+:root.light-mode body {
+  background-color: #F8FAFC;
+  color: #0F172A;
+}
+
+:root.light-mode .tt-card::before {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 140, 0, 0.15) 40%, rgba(255, 165, 0, 0.12) 60%, transparent 100%);
+}
+
+:root.light-mode .page-category {
+  background: linear-gradient(90deg, #E67E00, #FF8C00, #FFA500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+:root.light-mode .tt-header::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 140, 0, 0.25) 30%, rgba(255, 165, 0, 0.2) 60%, transparent 100%);
+}
+
+:root.light-mode .user-avatar {
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+:root.light-mode .brand-logo-badge {
+  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+:root.light-mode .brand-logo-badge:hover {
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+:root.light-mode .nav-link.active {
+  box-shadow: inset 3px 0 0 #FF8C00, 0 0 12px rgba(255, 140, 0, 0.12);
+}
+
+:root.light-mode .alert-badge {
+  background: linear-gradient(135deg, #FF8C00, #FFA500);
+  box-shadow: 0 0 10px rgba(255, 140, 0, 0.35);
+  border-color: #FAF6F1;
+}
+
+:root.light-mode .tt-btn-primary {
+  box-shadow: 0 2px 12px rgba(255, 140, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+:root.light-mode .tt-btn-primary:hover {
+  box-shadow: 0 4px 20px rgba(255, 140, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+:root.light-mode .tt-btn-secondary {
+  background: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+:root.light-mode .tt-btn-secondary:hover {
+  background: rgba(15, 23, 42, 0.08);
+  border-color: rgba(255, 140, 0, 0.3);
+}
+
+:root.light-mode .header-icon-btn {
+  background: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+:root.light-mode .header-icon-btn:hover {
+  background: rgba(255, 140, 0, 0.08);
+  box-shadow: 0 0 14px rgba(255, 140, 0, 0.12);
+}
+
+:root.light-mode .menu-toggle-btn {
+  background: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+:root.light-mode .menu-toggle-btn:hover {
+  background: rgba(15, 23, 42, 0.08);
+  border-color: rgba(255, 140, 0, 0.3);
+}
+
+:root.light-mode .user-profile-widget {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+:root.light-mode .user-profile-widget:hover {
+  background: rgba(15, 23, 42, 0.08);
+  border-color: rgba(15, 23, 42, 0.18);
+}
+
+:root.light-mode .sightings-table-container {
+  background: rgba(15, 23, 42, 0.03);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+:root.light-mode .tt-table th {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+:root.light-mode .tt-table tr:hover td {
+  background: rgba(255, 140, 0, 0.06);
+}
+
+:root.light-mode .badge-forest {
+  background: rgba(255, 140, 0, 0.1);
+  color: #E67E00;
+  border-color: rgba(255, 140, 0, 0.2);
+}
+
+:root.light-mode .badge-amber {
+  background: rgba(255, 165, 0, 0.1);
+  color: #FF8C00;
+  border-color: rgba(255, 165, 0, 0.2);
+}
+
+:root.light-mode .badge-red {
+  background: rgba(220, 38, 38, 0.1);
+  color: #DC2626;
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+:root.light-mode .badge-blue {
+  background: rgba(2, 132, 199, 0.1);
+  color: #0284C7;
+  border-color: rgba(2, 132, 199, 0.2);
+}
+
+:root.light-mode .badge-subtle {
+  background: rgba(15, 23, 42, 0.08);
+  color: #475569;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+:root.light-mode .status-dot.online {
+  background-color: #FF8C00;
+  box-shadow: 0 0 6px rgba(255, 140, 0, 0.4);
+}
+
+:root.light-mode .status-dot.warning {
+  background-color: #FFA500;
+  box-shadow: 0 0 6px rgba(255, 165, 0, 0.4);
+}
+
+:root.light-mode .status-dot.danger {
+  background-color: #DC2626;
+  box-shadow: 0 0 6px rgba(220, 38, 38, 0.4);
+}
+
+:root.light-mode .tt-select,
+:root.light-mode .tt-input {
+  background-color: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #0F172A;
+}
+
+:root.light-mode .tt-select:focus,
+:root.light-mode .tt-input:focus {
+  border-color: #FF8C00;
+  box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
+}
+
+:root.light-mode .synthetic-banner {
+  background: rgba(255, 140, 0, 0.08);
+  border-color: rgba(255, 140, 0, 0.15);
+  color: #4a4a4a;
+}
+
+:root.light-mode .synthetic-tag {
+  background: rgba(255, 140, 0, 0.12);
+  color: #E67E00;
+  border-color: rgba(255, 140, 0, 0.2);
+}
+
+:root.light-mode .live-pulsing-dot.active {
+  background: #FF8C00;
+  box-shadow: 0 0 8px rgba(255, 140, 0, 0.4);
+}
+
+:root.light-mode .mini-pulse-dot {
+  background: #FF8C00;
+  box-shadow: 0 0 6px rgba(255, 140, 0, 0.3);
+}
+
+:root.light-mode .filter-pill.active {
+  background: rgba(255, 140, 0, 0.12);
+  color: #E67E00;
+  box-shadow: inset 0 0 0 1px rgba(255, 140, 0, 0.2);
+}
+
+:root.light-mode .filter-chip.active {
+  background: rgba(255, 140, 0, 0.12);
+  color: #E67E00;
+  box-shadow: inset 0 0 0 1px rgba(255, 140, 0, 0.25);
+}
+
+:root.light-mode .layer-toggle-btn.active {
+  background: rgba(255, 140, 0, 0.12);
+  border-color: rgba(255, 140, 0, 0.3);
+  color: #E67E00;
+  box-shadow: 0 0 10px rgba(255, 140, 0, 0.1);
+}
+
+:root.light-mode .territory-item.selected {
+  border-color: rgba(255, 140, 0, 0.3);
+  background: rgba(255, 140, 0, 0.08);
+  box-shadow: 0 0 10px rgba(255, 140, 0, 0.08);
+}
+
+:root.light-mode .dropzone-box:hover,
+:root.light-mode .dropzone-box.drag-over {
+  border-color: #FF8C00;
+  background: rgba(255, 140, 0, 0.06);
+  box-shadow: 0 0 15px rgba(255, 140, 0, 0.1);
+}
+
+:root.light-mode .action-feedback-toast {
+  background: rgba(255, 140, 0, 0.1);
+  border-color: rgba(255, 140, 0, 0.2);
+  color: #E67E00;
+}
+
+:root.light-mode .feedback-toast {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.2);
+  color: #D97706;
+}
+
+:root.light-mode .live-feed-toast {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.2);
+  color: #D97706;
+}
+
+:root.light-mode .ambiguous-warning-box {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.2);
+  color: #D97706;
+}
+
+:root.light-mode .stream-complete-alert {
+  background: rgba(255, 140, 0, 0.1);
+  border-color: rgba(255, 140, 0, 0.2);
+  color: #E67E00;
+}
+
+:root.light-mode .threat-watermark-overlay {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+:root.light-mode .threat-alert-box {
+  background: rgba(220, 38, 38, 0.9);
+  color: #FFFFFF;
+}
+
+:root.light-mode .live-capture-toast {
+  background: rgba(255, 255, 255, 0.95);
+  border-left-color: #FF8C00;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.1);
+  color: #1a1a1a;
+}
+
+:root.light-mode .live-capture-toast.toast-success {
+  border-left-color: #FF8C00;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 15px rgba(255, 140, 0, 0.1);
+}
+
+:root.light-mode .live-capture-toast.toast-ambiguous {
+  border-left-color: #FFA500;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 15px rgba(255, 165, 0, 0.1);
+}
+
+/* Light Mode Graph & Chart Colors */
+:root.light-mode .sparkbar-fill {
+  background: rgba(255, 140, 0, 0.8);
+  box-shadow: 0 0 6px rgba(255, 140, 0, 0.4);
+}
+
+:root.light-mode .sparkbar-fill-latest {
+  background: linear-gradient(180deg, #FF8C00 0%, #E67E00 100%);
+  opacity: 1;
+  box-shadow: 0 0 12px rgba(255, 140, 0, 0.5);
+}
+
+:root.light-mode .sector-progress-fill {
+  background: linear-gradient(90deg, #FF8C00, #E67E00);
+  box-shadow: 0 0 6px rgba(255, 140, 0, 0.4);
+}
+
+:root.light-mode .conf-mini-bar-fill {
+  background: linear-gradient(90deg, #FF8C00, #E67E00);
+}
+
+:root.light-mode .mini-progress-fill {
+  background: linear-gradient(90deg, #FF8C00, #E67E00);
+  box-shadow: 0 0 6px rgba(255, 140, 0, 0.3);
+}
+
+:root.light-mode .progress-bar-fill {
+  background: linear-gradient(90deg, #FF8C00, #E67E00);
+  box-shadow: 0 0 8px rgba(255, 140, 0, 0.5);
+}
+
+/* Light Mode Chart Text Colors */
+:root.light-mode .sparkbar-label {
+  color: #333333;
+}
+
+:root.light-mode .sparkbar-val-bubble {
+  color: #000000;
+}
+
+:root.light-mode .sector-name {
+  color: #000000;
+  font-weight: 600;
+}
+
+:root.light-mode .sector-num {
+  color: #333333;
+}
+
+:root.light-mode .sector-info-row {
+  color: #000000;
+}
+
+:root.light-mode .vis-title {
+  color: #000000;
+}
+
+:root.light-mode .vis-sub {
+  color: #333333;
+}
+
+:root.light-mode .vis-legend {
+  color: #333333;
+}
+
+:root.light-mode .legend-item {
+  color: #333333;
+}
+
+:root.light-mode .current-hour-box {
+  background: linear-gradient(180deg, #FF8C00 0%, #E67E00 100%);
+  box-shadow: 0 0 6px rgba(255, 140, 0, 0.4);
+}
+
+:root.light-mode .hist-hour-box {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Light Mode Table Text */
+:root.light-mode .tt-table th {
+  color: #333333;
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:root.light-mode .tt-table td {
+  color: #333333;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+:root.light-mode .tiger-code-txt {
+  color: #000000;
+}
+
+:root.light-mode .tiger-sub-txt {
+  color: #333333;
+}
+
+:root.light-mode .station-txt {
+  color: #000000;
+  font-weight: 600;
+}
+
+:root.light-mode .zone-pill {
+  color: #333333;
+}
+
+/* Light Mode Card Text */
+:root.light-mode .tt-card-title {
+  color: #000000;
+}
+
+:root.light-mode .tt-card-subtitle {
+  color: #333333;
+}
+
+:root.light-mode .kpi-label {
+  color: #333333;
+}
+
+:root.light-mode .kpi-value {
+  color: #000000;
+}
+
+:root.light-mode .kpi-subtext {
+  color: #333333;
+}
+
+:root.light-mode .m-label {
+  color: #333333;
+}
+
+:root.light-mode .m-val {
+  color: #000000;
+}
+
+:root.light-mode .m-sub {
+  color: #333333;
+}
+
+/* Light Mode Form Text */
+:root.light-mode .filter-label {
+  color: #333333;
+}
+
+:root.light-mode .search-input {
+  color: #000000;
+}
+
+:root.light-mode .search-input::placeholder {
+  color: #999999;
+}
+
+:root.light-mode .tt-select,
+:root.light-mode .tt-input {
+  color: #000000;
+}
+
+:root.light-mode .tt-select::placeholder,
+:root.light-mode .tt-input::placeholder {
+  color: #999999;
+}
+
+/* Light Mode Alert Text */
+:root.light-mode .alert-entry-title {
+  color: #000000;
+}
+
+:root.light-mode .alert-entry-desc {
+  color: #333333;
+}
+
+:root.light-mode .alert-time {
+  color: #333333;
+}
+
+/* Light Mode Detail Text */
+:root.light-mode .detail-id-tag {
+  color: #333333;
+}
+
+:root.light-mode .detail-title {
+  color: #000000;
+}
+
+:root.light-mode .spec-name {
+  color: #333333;
+}
+
+:root.light-mode .spec-val {
+  color: #000000;
+}
+
+:root.light-mode .node-station {
+  color: #000000;
+}
+
+:root.light-mode .node-time {
+  color: #333333;
+}
+
+:root.light-mode .node-zone {
+  color: #333333;
+}
+
+/* Light Mode Metadata */
+:root.light-mode .meta-cell {
+  color: #000000;
+}
+
+:root.light-mode .cell-label {
+  color: #333333;
+}
+
+:root.light-mode .cell-value {
+  color: #000000;
+}
+
+/* Light Mode Item Text */
+:root.light-mode .item-candidate-id {
+  color: #000000;
+}
+
+:root.light-mode .item-station-line {
+  color: #333333;
+}
+
+:root.light-mode .item-meta-row {
+  color: #333333;
+}
+
+/* Light Mode Candidate Card */
+:root.light-mode .cand-id {
+  color: #000000;
+}
+
+:root.light-mode .cand-sex {
+  color: #333333;
+}
+
+:root.light-mode .cand-score {
+  color: #000000;
+}
+
+:root.light-mode .cand-sub-meta {
+  color: #333333;
+}
+
+/* Light Mode Panel Header */
+:root.light-mode .panel-header {
+  color: #333333;
+}
+
+/* Light Mode Territory */
+:root.light-mode .item-id-txt {
+  color: #000000;
+}
+
+:root.light-mode .item-zone-txt {
+  color: #333333;
+}
+
+:root.light-mode .item-meta-line {
+  color: #333333;
+}
+
+:root.light-mode .item-meta-line strong {
+  color: #000000;
+}
+
+:root.light-mode .overlap-desc {
+  color: #333333;
+}
+
+:root.light-mode .overlap-desc strong {
+  color: #000000;
+}
+
+/* Light Mode Channel */
+:root.light-mode .channel-title {
+  color: #000000;
+}
+
+:root.light-mode .channel-village-info {
+  color: #000000;
+}
+
+:root.light-mode .channel-village-info strong {
+  color: #000000;
+}
+
+:root.light-mode .footer-meta-row {
+  color: #333333;
+}
+
+/* Light Mode Tiger Card */
+:root.light-mode .tiger-title {
+  color: #000000;
+}
+
+:root.light-mode .tiger-notes {
+  color: #333333;
+}
+
+:root.light-mode .metric-lbl {
+  color: #333333;
+}
+
+:root.light-mode .metric-val {
+  color: #000000;
+}
+
+:root.light-mode .latest-text {
+  color: #333333;
+}
+
+/* Light Mode Dropzone */
+:root.light-mode .upload-prompt-text {
+  color: #000000;
+}
+
+:root.light-mode .upload-prompt-sub {
+  color: #333333;
+}
+
+:root.light-mode .dropzone-icon {
+  color: #333333;
+}
+
+/* Light Mode Policy */
+:root.light-mode .policy-item strong {
+  color: #000000;
+}
+
+:root.light-mode .policy-item p {
+  color: #333333;
+}
+
+/* Light Mode Tiger Theme Enhancements */
+:root.light-mode .tt-header {
+  border-bottom-color: rgba(255, 140, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(255, 140, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+:root.light-mode .brand-logo-badge {
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.12) 0%, rgba(255, 165, 0, 0.06) 100%);
+  border-color: rgba(255, 140, 0, 0.25);
+  box-shadow: 0 4px 16px rgba(255, 140, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+:root.light-mode .brand-logo-badge:hover {
+  border-color: rgba(255, 140, 0, 0.4);
+  box-shadow: 0 0 24px rgba(255, 140, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.15) 0%, rgba(255, 165, 0, 0.08) 100%);
+}
+
+:root.light-mode .nav-link.active {
+  box-shadow: inset 3px 0 0 #FF8C00, 0 0 12px rgba(255, 140, 0, 0.12);
+  background: rgba(255, 140, 0, 0.06);
+}
+
+:root.light-mode .tt-card {
+  border-color: rgba(255, 140, 0, 0.12);
+}
+
+:root.light-mode .tt-card:hover {
+  border-color: rgba(255, 140, 0, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12), 0 0 15px rgba(255, 140, 0, 0.1);
+}
+
+:root.light-mode .tt-card.tiger-accent {
+  border: 1.5px solid rgba(255, 140, 0, 0.25);
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.04) 0%, rgba(255, 165, 0, 0.02) 100%);
+}
+
+:root.light-mode .tt-card-header {
+  border-bottom-color: rgba(255, 140, 0, 0.12);
+}
+
+:root.light-mode .badge-tiger {
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.12) 0%, rgba(255, 165, 0, 0.06) 100%);
+  color: #FF8C00;
+  border-color: rgba(255, 140, 0, 0.25);
+  box-shadow: 0 0 8px rgba(255, 140, 0, 0.12);
+}
+
+:root.light-mode .alert-badge {
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.15) 0%, rgba(255, 165, 0, 0.08) 100%);
+  border: 1.5px solid rgba(255, 140, 0, 0.3);
+  color: #FF8C00;
+  box-shadow: 0 0 12px rgba(255, 140, 0, 0.2);
+}
+
+:root.light-mode .tt-table th {
+  background: linear-gradient(90deg, rgba(255, 140, 0, 0.05) 0%, rgba(255, 165, 0, 0.02) 100%);
+  border-bottom-color: rgba(255, 140, 0, 0.15);
+  color: #000000;
+}
+
+:root.light-mode .tt-table tr:hover td {
+  background: rgba(255, 140, 0, 0.08);
+}
+
+:root.light-mode .tt-input:focus,
+:root.light-mode .tt-select:focus {
+  border-color: #FF8C00;
+  box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.12), inset 0 0 0 1px rgba(255, 140, 0, 0.08);
+}
+
+:root.light-mode .status-dot.tiger {
+  background-color: #FF8C00;
+  box-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
+}
+
+:root.light-mode .tiger-border {
+  border-color: rgba(255, 140, 0, 0.25);
+  box-shadow: inset 0 0 12px rgba(255, 140, 0, 0.04);
+}
+
+:root.light-mode .tiger-border:hover {
+  border-color: rgba(255, 140, 0, 0.4);
+  box-shadow: inset 0 0 16px rgba(255, 140, 0, 0.08), 0 0 16px rgba(255, 140, 0, 0.08);
+}
+
+:root.light-mode .text-tiger-glow {
+  color: #FF8C00;
+  text-shadow: 0 0 8px rgba(255, 140, 0, 0.3), 0 0 16px rgba(255, 165, 0, 0.15);
+}
+
+:root.light-mode .tiger-icon {
+  color: #FF8C00;
+  filter: drop-shadow(0 0 4px rgba(255, 140, 0, 0.2));
+}
+
+:root.light-mode .tiger-icon:hover {
+  color: #FFA500;
+  filter: drop-shadow(0 0 8px rgba(255, 140, 0, 0.3));
+}
+
+:root.light-mode .tiger-alert {
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.08) 0%, rgba(255, 165, 0, 0.04) 100%);
+  border-color: rgba(255, 140, 0, 0.25);
+  border-left-color: #FF8C00;
+  color: #000000;
+}
+
+:root.light-mode .tiger-progress {
+  background: rgba(255, 140, 0, 0.08);
+}
+
+:root.light-mode .tiger-progress-fill {
+  box-shadow: 0 0 12px rgba(255, 140, 0, 0.4);
+}
+
+:root.light-mode .tiger-tooltip {
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.9) 0%, rgba(255, 165, 0, 0.85) 100%);
+  color: #000000;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(255, 140, 0, 0.3);
+}
+
+:root.light-mode .text-tiger {
+  color: #FF8C00;
+}
+
+:root.light-mode .text-tiger-dark {
+  color: #E67E00;
+}
+
+:root.light-mode .tiger-separator {
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    rgba(255, 140, 0, 0.25) 25%,
+    rgba(255, 140, 0, 0.25) 75%,
+    transparent 100%);
+}
+
+:root.light-mode .tiger-accent-line::before {
+  background: linear-gradient(180deg, 
+    rgba(255, 140, 0, 0.7) 0%,
+    rgba(255, 165, 0, 0.5) 50%,
+    rgba(255, 140, 0, 0.7) 100%);
+}
+
+:root.light-mode .tiger-highlight {
+  background: linear-gradient(120deg, 
+    rgba(255, 140, 0, 0.12) 0%,
+    rgba(255, 165, 0, 0.18) 50%,
+    rgba(255, 140, 0, 0.12) 100%);
+  border-left-color: #FF8C00;
+}
